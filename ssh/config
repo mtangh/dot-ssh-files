@@ -1,0 +1,486 @@
+# $OpenBSD: ssh_config,v 1.33 2017/05/07 23:12:57 djm Exp $
+#
+# This is the ssh client system-wide configuration file. See
+# ssh_config(5) for more information. This file provides defaults for
+# users, and the values can be changed in per-user configuration files
+# or on the command line.
+#
+# Configuration data is parsed as follows:
+#  1. command line options
+#  2. user-specific file
+#  3. system-wide file
+# Any configuration value is only changed the first time it is set.
+# Thus, host-specific definitions should be at the beginning of the
+# configuration file, and defaults at the end.
+#
+# Site-wide defaults for some commonly used options. For a comprehensive
+# list of available options, their meanings and defaults, please see the
+# ssh_config(5) man page.
+#
+# Host *
+#	ForwardAgent no
+#	ForwardX11 no
+#	PasswordAuthentication yes
+#	HostbasedAuthentication no
+#	GSSAPIAuthentication no
+#	GSSAPIDelegateCredentials no
+#	BatchMode no
+#	CheckHostIP yes
+#	AddressFamily any
+#	ConnectTimeout 0
+#	StrictHostKeyChecking ask
+#	IdentityFile ~/.ssh/id_rsa
+#	IdentityFile ~/.ssh/id_dsa
+#	IdentityFile ~/.ssh/id_ecdsa
+#	IdentityFile ~/.ssh/id_ed25519
+#	Port 22
+#	Protocol 2
+#	Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc
+#	MACs hmac-md5,hmac-sha1,umac-64@openssh.com
+#	EscapeChar ~
+#	Tunnel no
+#	TunnelDevice any:any
+#	PermitLocalCommand no
+#	VisualHostKey no
+#	ProxyCommand ssh -q -W %h:%p gateway.example.com
+#	RekeyLimit 1G 1h
+#	SendEnv LANG LC_*
+#
+# PATTERNS:
+# A pattern consists of zero or more non-whitespace characters, `*' (a
+# wildcard that matches zero or more characters), or `?' (a wildcard
+# that matches exactly one character). For example, to specify a set of 
+# declarations for any host in the ".co.uk" set of domains, the
+# following pattern could be used:
+# 
+#  Host *.co.uk
+#
+# The following pattern would match any host in the 192.168.0.[0-9]
+# network range:
+#
+#  Host 192.168.0.?
+#
+# A pattern-list is a comma-separated list of patterns. Patterns within
+# pattern-lists may be negated by preceding them with an exclamation
+# mark (`!'). For example, to allow a key to be used from anywhere
+# within an organization except from the "dialup" pool, the following
+# entry (in authorized_keys) could be used:
+#
+#  from="!*.dialup.example.com,*.example.com"
+#
+# Note that a negated match will never produce a positive result by
+# itself. For example, attempting to match "host3" against the
+# following pattern-list will fail:
+#
+#  from="!host1,!host2"
+#
+# The solution here is to include a term that will yield a positive
+# match, such as a wildcard:
+#
+#  from="!host1,!host2,*"
+#
+# TOKENS:
+# Arguments to some keywords can make use of tokens, which are
+# expanded at runtime:
+#
+#   %%  A literal `%'.
+#   %C  Hash of %l%h%p%r.
+#   %d  Local user's home directory.
+#   %h  The remote hostname.
+#   %i  The local user ID.
+#   %L  The local hostname.
+#   %l  The local hostname, including the domain name.
+#   %n  The original remote hostname, as given on the command line.
+#   %p  The remote port.
+#   %r  The remote username.
+#   %T  The local tun(4) or tap(4) network interface assigned if
+#       tunnel forwarding was requested, or "NONE" otherwise.
+#   %u  The local username.
+#
+# Match exec      : %%, %h, %i, %L, %l, %n, %p, %r, %u
+# CertificateFile : %%, %d, %h, %i, %l, %r, %u
+# ControlPath     : %%, %C, %h, %i, %L, %l, %n, %p, %r, %u
+# HostName        : %%, %h
+# IdentityAgent   : %%, %d, %h, %i, %l, %r, %u
+# IdentityFile    : %%, %d, %h, %i, %l, %r, %u
+# LocalCommand    : %%, %C, %d, %h, %i, %l, %n, %p, %r, %T, %u
+# ProxyCommand    : %%, %h, %p, %r
+# RemoteCommand   : %%, %C, %d, %h, %i, %l, %n, %p, %r, %u
+#
+
+# IgnoreUnknown:
+# Specifies a pattern-list of unknown options to be ignored if they are
+# encountered in configuration parsing. This may be used to suppress
+# errors if ssh_config contains options that are unrecognised by ssh(1).
+# It is recommended that IgnoreUnknown be listed early in the 
+# configuration file as it will not be applied to unknown options that
+# appear before it.
+IgnoreUnknown Include,UseKeychain,AddKeysToAgent,SyslogFacility
+
+##-
+##- Include
+##-
+
+Include config.d/??_*.conf
+
+##-
+##- Default
+##-
+
+Host *
+
+	# Include default
+	Include default.conf
+
+	# Protocol:
+	# Specifies the protocol versions ssh(1) should support in order of
+	# preference. The possible values are '1' and '2'. Multiple versions
+	# must be comma-separated. The default is ''2,1''. This means that ssh
+	# tries version 2 and falls back to version 1 if version 2 is not
+	# available.
+	Protocol 2
+	
+	# LogLevel:
+	# Gives the verbosity level that is used when logging messages from
+	# ssh(1). The possible values are: QUIET, FATAL, ERROR, INFO, VERBOSE,
+	# DEBUG, DEBUG1, DEBUG2, and DEBUG3. The default is INFO. DEBUG and
+	# DEBUG1 are equivalent. DEBUG2 and DEBUG3 each specify higher levels
+	# of verbose output.
+	LogLevel VERBOSE
+
+	# SyslogFacility:
+	# Gives the facility code that is used when logging messages from
+	# ssh(1). The possible values are: DAEMON, USER, AUTH, LOCAL0 - LOCAL7. 
+	# The default is USER.
+	SyslogFacility USER
+
+	# VersionAddendum:
+	# Specifies a string to append to the regular version string to
+	# identify OS- or site-specific modifications. The default is
+	# ``FreeBSD-20180909''. The value none may be used to disable this.
+	VersionAddendum none
+
+	# EscapeChar:
+	# Sets the escape character (default: `~'). The escape character can
+	# also be set on the command line. The argument should be a single
+	# character, `^' followed by a letter, or none to disable the escape
+	# character entirely (making the connection transparent for binary
+	# data).
+	EscapeChar ~
+
+	# RequestTTY:
+	# Specifies whether to request a pseudo-tty for the session. The
+	# argument may be one of: no (never request a TTY), yes (always
+	# request a TTY when standard input is a TTY), force (always request
+	# a TTY) or auto (request a TTY when opening a login session).
+	# This option mirrors the -t and -T flags for ssh(1).
+	RequestTTY auto
+
+	# PasswordAuthentication:
+	# Specifies whether to use password authentication. The argument
+	# to this keyword must be yes (the default) or no.
+	PasswordAuthentication yes
+
+	# PubkeyAuthentication:
+	# Specifies whether to try public key authentication. The argument
+	# to this keyword must be yes (the default) or no.
+	PubkeyAuthentication yes
+
+	# HostbasedAuthentication:
+	# Specifies whether to try rhosts based authentication with public
+	# key authentication. The argument must be yes or no (the default).
+	HostbasedAuthentication no
+
+	# RhostsRSAAuthentication:
+	# Specifies whether to try rhosts based authentication with RSA host
+	# authentication. The argument must be ''yes'' or ''no''. The default
+	# is ''no''. This option applies to protocol version 1 only and
+	# requires ssh(1) to be setuid root.
+	RhostsRSAAuthentication no
+
+	# RSAAuthentication:
+	# Specifies whether to try RSA authentication. The argument to this
+	# keyword must be ''yes'' or ''no''. RSA authentication will only be
+	# attempted if the identity file exists, or an authentication agent
+	# is running. The default is ''yes''. Note that this option applies
+	# to protocol version 1 only.
+	RSAAuthentication no
+
+	# GSSAPIAuthentication:
+	# Specifies whether user authentication based on GSSAPI is allowed.
+	# The default is no.
+	GSSAPIAuthentication no
+
+	# GSSAPIDelegateCredentials
+	# Forward (delegate) credentials to the server.
+	# The default is no.
+	GSSAPIDelegateCredentials no
+
+	# ChallengeResponseAuthentication:
+	# Specifies whether to use challenge-response authentication.
+	# The argument to this keyword must be yes (the default) or no.
+	ChallengeResponseAuthentication yes
+
+	# PreferredAuthentications:
+	# Specifies the order in which the client should try authentication
+	# methods. This allows a client to prefer one method (e.g.
+	# keyboard-interactive) over another method (e.g. password). The
+	# default is:
+	# gssapi-with-mic,hostbased,publickey,keyboard-interactive,password
+	PreferredAuthentications publickey,keyboard-interactive,password
+
+	# AddKeysToAgent:
+	# Specifies whether keys should be automatically added to a running
+	# ssh-agent(1).
+	AddKeysToAgent yes
+
+	# ForwardAgent:
+	# Specifies whether the connection to the authentication agent (if any)
+	# will be forwarded to the remote machine.
+	ForwardAgent yes
+
+	# ForwardX11:
+	# Specifies whether X11 connections will be automatically redirected
+	# over the secure channel and DISPLAY set. The argument must be yes
+	# or no (the default).
+	ForwardX11 no
+
+	# ForwardX11Trusted:
+	# If this option is set to yes, remote X11 clients will have full
+	# access to the original X11 display.
+	ForwardX11Trusted no
+
+	# ForwardX11Timeout:
+	# Specify a timeout for untrusted X11 forwarding using the format
+	# described in the TIME FORMATS section of sshd_config(5). X11
+	# connections received by ssh(1) after this time will be refused.
+	# The default is to disable untrusted X11 forwarding after twenty
+	# minutes has elapsed.
+	ForwardX11Timeout 15m
+
+	# IdentityFile:
+	# Specifies a file from which the user's DSA, ECDSA, Ed25519 or RSA
+	# authentication identity is read. The default is ~/.ssh/id_dsa,
+	# ~/.ssh/id_ecdsa, ~/.ssh/id_ed25519 and ~/.ssh/id_rsa.
+	# Additionally, any identities represented by the authentication
+	# agent will be used for authentication unless IdentitiesOnly is set.
+	# If no certificates have been explicitly specified by CertificateFile,
+	# ssh(1) will try to load certificate information from the filename
+	# obtained by appending -cert.pub to the path of a specified
+	# IdentityFile.
+	IdentityFile ~/.ssh/id_ed25519
+	IdentityFile ~/.ssh/id_rsa
+	IdentityFile ~/.ssh/id_ecdsa
+	IdentityFile ~/.ssh/id_dsa
+
+	# IdentitiesOnly:
+	# Specifies that ssh(1) should only use the authentication identity
+	# and certificate files explicitly configured in the ssh_config
+	# files or passed on the ssh(1) command-line, even if ssh-agent(1)
+	# or a PKCS11Provider offers more identities. The argument to this
+	# keyword must be yes or no (the default). This option is intended
+	# for situations where ssh-agent offers many different identities.
+	IdentitiesOnly no
+
+	# CheckHostIP:
+	# If set to yes, ssh(1) will additionally check the host IP address
+	# in the known_hosts file. 
+	CheckHostIP yes
+
+	# StrictHostKeyChecking:
+	# If this flag is set to yes, ssh(1) will never automatically add
+	# host keys to the ~/.ssh/known_hosts file, and refuses to connect
+	# to hosts whose host key has changed.
+	StrictHostKeyChecking ask
+
+	# GlobalKnownHostsFile:
+	# Specifies one or more files to use for the global host key
+	# database, separated by whitespace.
+	#GlobalKnownHostsFile /etc/ssh/ssh_known_hosts, /etc/ssh/ssh_known_hosts2
+
+	# UserKnownHostsFile:
+	# Specifies one or more files to use for the user host key 
+	# database, separated by whitespace. The default is
+	# ~/.ssh/known_hosts, ~/.ssh/known_hosts2.
+	UserKnownHostsFile ~/.ssh/known_hosts, ~/.ssh/known_hosts2
+
+	# NoHostAuthenticationForLocalhost:
+	# Disable host authentication for localhost (loopback addresses).
+	# The argument to this keyword must be yes or no (the default).
+	NoHostAuthenticationForLocalhost yes
+
+	# VisualHostKey:
+	# If this flag is set to yes, an ASCII art representation of the
+	# remote host key fingerprint is printed in addition to the
+	# fingerprint string at login and for unknown host keys. If this flag
+	# is set to no (the default), no fingerprint strings are printed at
+	# login and only the fingerprint string will be printed for unknown
+	# host keys.
+	VisualHostKey yes
+
+	# Ciphers:
+	# Specifies the ciphers allowed for protocol version 2 in order of
+	# preference. Multiple ciphers must be comma-separated. 
+	Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+	# HostKeyAlgorithms:
+	# Specifies the host key algorithms that the client wants to use in
+	# order of preference.
+	HostKeyAlgorithms ssh-ed25519-cert-v01@openssh.com,ssh-rsa-cert-v01@openssh.com,ssh-ed25519,ssh-rsa,ecdsa-sha2-nistp521-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,ecdsa-sha2-nistp256
+
+	# KexAlgorithms:
+	# Specifies the available KEX (Key Exchange) algorithms. Multiple
+	# algorithms must be comma-separated. 
+	KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+
+	# Macs:
+	# Specifies the MAC (message authentication code) algorithms in
+	# order of preference. The MAC algorithm is	used for data integrity
+	# protection. Multiple algorithms must be comma-separated.
+	MACs umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-64-etm@openssh.com,umac-64@openssh.com
+
+	# RekeyLimit:
+	# Specifies the maximum amount of data that may be transmitted
+	# before the session key is renegotiated, optionally followed a
+	# maximum amount of time that may pass before the session key is
+	# renegotiated. The first argument is specified in bytes and may
+	# have a suffix of `K', `M', or `G' to indicate Kilobytes,
+	# Megabytes, or Gigabytes, respectively. The default is between
+	# `1G' and `4G', depending on the cipher. The optional second
+	# value is specified in seconds and may use any of the units
+	# documented in the TIME FORMATS section of sshd_config(5). The
+	# default value for RekeyLimit is default none, which means that
+	# rekeying is performed after the cipher's default amount of data
+	# has been sent or received and no time based rekeying is done.
+	RekeyLimit 1G 1h
+
+	# TCPKeepAlive:
+	# Specifies whether the system should send TCP keepalive messages to
+	# the other side.
+	TCPKeepAlive yes
+
+	# ConnectTimeout:
+	# Specifies the timeout (in seconds) used when connecting to the SSH
+	# server, instead of using the default system TCP timeout. 
+	ConnectTimeout 15
+
+	# ConnectionAttempts:
+	# Specifies the number of tries (one per second) to make before exiting.
+	# The argument must be an integer. 
+	ConnectionAttempts 2
+
+	# ServerAliveInterval:
+	# Sets a timeout interval in seconds after which if no data has been
+	# received from the server, ssh(1) will send a message through the
+	# encrypted channel to request a response from the server.
+	ServerAliveInterval 15
+
+	# ServerAliveCountMax:
+	# Sets the number of server alive messages (see below) which may be
+	# sent without ssh(1) receiving any messages back from the server.
+	ServerAliveCountMax 4
+
+	# ControlMaster:
+	# Enables the sharing of multiple sessions over a single network
+	# connection. When set to yes, ssh(1) will listen for connections
+	# on a control socket specified using the ControlPath argument.
+	# Additional sessions can connect to this socket using the same
+	# ControlPath with ControlMaster set to no (the default).
+	ControlMaster auto
+
+	# ControlPath:
+	# Specify the path to the control socket used for connection sharing
+	# as described in the ControlMaster section above or the string none
+	# to disable connection sharing.
+	ControlPath none
+
+	# ControlPersist:
+	# When used in conjunction with ControlMaster, specifies that the
+	# master connection should remain open in the background (waiting
+	# for future client connections) after the initial client connection
+	# has been closed. If set to no, then the master connection will not
+	# be placed into the background, and will close as soon as the
+	# initial client connection is closed. If set to yes or 0, then the
+	# master connection will remain in the background indefinitely (until
+	# killed or closed via a mechanism such as the "ssh -O exit"). If
+	# set to a time in seconds, or a time in any of the formats
+	# documented in sshd_config(5), then the backgrounded master
+	# connection will automatically terminate after it has remained
+	# idle (with no client connections) for the specified time.
+	ControlPersist 10s
+
+	# Compression:
+	# Specifies whether to use compression. The argument must be ''yes''
+	# or ''no''. The default is ''no''.
+	Compression yes
+
+	# LocalForward:
+	# Specifies that a TCP port on the local machine be forwarded over the
+	# secure channel to the specified host and port from the remote machine.
+	# The first argument must be [bind_address:]port and the second argument
+	# must be host:hostport. IPv6 addresses can be specified by enclosing
+	# addresses in square brackets.
+	LocalForward none
+
+	# RemoteForward:
+	# Specifies that a TCP port on the remote machine be forwarded over the
+	# secure channel. The remote port may either be forwarded to a specified
+	# host and port from the local machine, or may act as a SOCKS 4/5 proxy
+	# that allows a remote client to connect to arbitrary destinations from
+	# the local machine. The first argument must be [bind_address:]port If
+	# forwarding to a specific destination then the second argument must be
+	# host:hostport, otherwise if no destination argument is specified then
+	# the remote forwarding will be established as a SOCKS proxy. IPv6
+	# addresses can be specified by enclosing addresses in square brackets.
+	RemoteForward none
+
+	# DynamicForward:
+	# Specifies that a TCP port on the local machine be forwarded over the
+	# secure channel, and the application protocol is then used to determine
+	# where to connect to from the remote machine. The argument must be
+	# [bind_address:]port. IPv6 addresses can be specified by enclosing
+	# addresses in square brackets. By default, the local port is bound in
+	# accordance with the GatewayPorts setting.  
+	DynamicForward none
+
+	# GatewayPorts:
+	# Specifies whether remote hosts are allowed to connect to local
+	# forwarded ports. By default, ssh(1) binds local port forwardings
+	# to the loopback address. This prevents other remote hosts from
+	# connecting to forwarded ports. GatewayPorts can be used to specify
+	# that ssh should bind local port forwardings to the wildcard address,
+	# thus allowing remote hosts to connect to forwarded ports. The
+	# argument must be yes or no (the default).
+	GatewayPorts no
+
+	# PermitLocalCommand:
+	# Allow local command execution via the LocalCommand option or using
+	# the !command escape sequence in ssh(1). The argument must be yes or
+	# no (the default).
+	PermitLocalCommand no
+
+	# LocalCommand:
+	# Specifies a command to execute on the local machine after successfully
+	# connecting to the server. The command string extends to the end of the
+	# line, and is executed with the user's shell.
+	LocalCommand none
+
+	# RemoteCommand:
+	# Specifies a command to execute on the remote machine after successfully
+	# connecting to the server. The command string extends to the end of the
+	# line, and is executed with the user's shell. Arguments to RemoteCommand
+	# accept the tokens described in the TOKENS section.
+	RemoteCommand none
+
+	# ProxyCommand:
+	# Specifies the command to use to connect to the server. The command
+	# string extends to the end of the line, and is executed using the
+	# user's shell `exec' directive to avoid a lingering shell process.
+	ProxyCommand none
+
+	# SetEnv:
+	# Directly specify one or more environment variables and their contents
+	# to be sent to the server. Similarly to SendEnv, the server must be
+	# prepared to accept the environment variable.
+	SetEnv LANG LC_*
+

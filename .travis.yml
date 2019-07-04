@@ -1,0 +1,34 @@
+---
+# vim: set ff=unix ts=2 sw=2 sts=2 et : This line is VIM modeline
+
+language: minimal
+
+# Use the new container infrastructure
+sudo: false
+
+# Install packages
+install: true
+
+# Run
+script:
+
+  - |
+    bash -n install.sh &&
+    bash install.sh &&
+    [ -r "$HOME/.ssh/config" ] &&
+    [ -r "$HOME/.ssh/default.conf" ] &&
+    [ -d "$HOME/.ssh/config.d" ] &&
+    [ -d "$HOME/.ssh/keys" ] &&
+    [ -x "$HOME/.ssh/ssh_config_cat.sh" ] &&
+    ssh -G localhost |
+    egrep -i '^CheckHostIP[ ]+no$' &&
+    bash -n "$HOME/.ssh/ssh_config_cat.sh" &&
+    bash "$HOME/.ssh/ssh_config_cat.sh" |
+    egrep -i '^[ \t]CheckHostIP[ \t]+no$' &&
+    : "OK";
+
+# Notifications
+#notifications:
+#  email:
+#  - your@emailaddress
+

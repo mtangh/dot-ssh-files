@@ -1,0 +1,502 @@
+# .gitignore
+# https://github.com/mtangh/dot-git-files/
+# vim: set ff=unix ts=2 sw=2 sts=2 et : This line is VIM modeline
+
+# Compiled Object Files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Compiled Dynamic Libraries
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# Compiled Static Libraries
+*.a
+*.la
+*.lai
+*.lib
+
+# Executables
+*.exe
+*.exe~
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# backup, log
+*~
+~*
+.swp.*
+.cache
+*.swp
+*.tmp
+*.bak
+*.BAK
+*.old
+logs
+*.log
+*.log*
+*.autosave
+*~.nib/
+## MS Office
+~$*.doc*
+~$*.xls*
+~$*.ppt*
+*.~vsd*
+*.xlk
+## LibreOffice locks
+.~lock.*#
+
+# Archives
+*.7z
+*.rar
+*.lha
+*.zip
+*.gz
+*.bz2
+*.bzip
+*.tar
+*.tgz
+*.tbz
+*.xz
+*.lzma
+*.cab
+
+# ISO
+*.iso
+
+# Package management formats
+*.xpi
+*.gem
+*.egg
+*.deb
+*.rpm
+## Windows Installer files
+*.msi
+*.msix
+*.msm
+*.msp
+## MacOSX Disk Image
+*.dmg
+
+# Build dir
+build/
+dist/
+out/
+
+# Windows
+[Tt]humbs.db
+ehthumbs.db
+ehthumbs_vista.db
+
+## Windows: Folder config file
+[Dd]esktop.ini
+
+## Windows: Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+## Windows: Recycle Bin used on file shares
+.BIN/
+
+## Windows: shortcuts
+*.lnk
+
+# MacOSX
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## MacOSX: Thumbnails
+._*
+
+## MacOSX: Icon must ends with two \r.
+Icon\r\r
+
+## MacOSX: Files that might appear on external disk
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.vol
+.com.apple.timemachine.donotpresent
+
+## MacOSX: Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+.apdisk
+Network Trash Folder
+Temporary Items
+
+## MacOSX: iCloud Temp
+.*.icloud
+
+# Linux
+lost+foond
+
+## Linux: temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+
+## Linux: KDE directory preferences
+.directory
+
+## Linux: Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+## Linux: .nfs files are created when an open file is removed but is still being accessed
+.nfs*
+
+# Git
+.git/
+*/.git/
+
+# SVN
+.svn/
+svn-commit*.tmp
+*.mine
+*.merge-left
+*.merge-right
+*.merge-left.*
+*.merge-right.*
+*.working
+
+# CVS
+/CVS/*
+**/CVS/*
+.cvsignore
+*/.cvsignore
+
+# Mercurial
+.hg/
+.hgignore
+.hgsigs
+.hgsub
+.hgsubstate
+.hgtags
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+## Java: BlueJ files
+*.ctxt
+
+## Java: Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+## Java: virtual machine crash logs,
+## see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# Python objects
+*.p
+*.pkl
+*.pyc
+*.pyd
+*.pyo
+
+# Dropbox settings and caches
+.dropbox
+.dropbox.attr
+.dropbox.cache
+
+# Ansible
+*.retry
+
+# Vagrant
+.vagrant/
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+## Vim: Session
+Session.vim
+
+## Vim: Temporary
+.netrwhist
+
+## Vim: Auto-generated tag files
+tags
+
+## Vim: Persistent undo
+[._]*.un~
+
+# Emacs
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+## Emacs: Org-mode
+.org-id-locations
+*_archive
+
+## Emacs: flymake-mode
+*_flymake.*
+
+## Emacs: eshell files
+/eshell/history
+/eshell/lastdir
+
+## Emacs: elpa packages
+/elpa/
+
+## Emacs: reftex files
+*.rel
+
+## Emacs: AUCTeX auto folder
+#/auto/
+
+## Emacs: cask packages
+.cask/
+
+## Emacs: Flycheck
+flycheck_*.el
+
+## Emacs: server auth directory
+#/server/
+
+## Emacs: projectiles files
+.projectile
+
+## Emacs: directory configuration
+.dir-locals.el
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Maven
+target/
+**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+!gradle-wrapper.jar
+
+# Ninja
+.ninja_deps
+.ninja_log
+
+# Xcode
+# gitignore contributors: remember to update Global/Xcode.gitignore,
+# Objective-C.gitignore & Swift.gitignore
+*.xcodeproj/*
+*.xcworkspace
+
+## Xcode: Build generated
+DerivedData
+
+## Xcode: Various settings
+*.mode1
+*.mode1v3
+*.mode2
+*.mode2v3
+*.pbxuser
+*.perspective
+*.perspectivev1
+*.perspectivev2
+*.perspectivev3
+!default.pbxuser
+!default.mode1
+!default.mode1v3
+!default.mode2
+!default.mode2v3
+!default.perspectivev1
+!default.perspectivev2
+!default.perspectivev3
+xcuserdata
+
+## Xcode: Other
+*.moved-aside
+*.xccheckout
+*.xcuserstate
+
+## Xcode: Obj-C/Swift specific
+*.hmap
+*.ipa
+
+# Eclipse
+.metadata
+#.project
+#.classpath
+#.settings/
+
+## Eclipse: External tool builders
+.externalToolBuilders/
+
+## Eclipse: Locally stored "Eclipse launch configurations"
+#*.launch
+
+## Eclipse: CDT-specific (C/C++ Development Tooling)
+.cproject
+
+## Eclipse: CDT-autotools
+.autotools
+
+## Eclipse: PyDev specific (Python IDE for Eclipse)
+.pydevproject
+*.pydevproject
+
+## Eclipse: PDT-specific (PHP Development Tools)
+.buildpath
+
+## Eclipse: sbteclipse plugin
+.target
+
+## Eclipse: Tern plugin
+.tern-project
+
+## Eclipse: TeXlipse plugin
+.texlipse
+
+## Eclipse: STS (Spring Tool Suite)
+.springBeans
+
+## Eclipse: Code Recommenders
+.recommenders
+.recommenders/
+
+## Eclipse: Annotation Processing
+.apt_generated/
+
+## Eclipse: Scala IDE specific (Scala & Java development for Eclipse)
+.cache-main
+.scala_dependencies
+.worksheet
+
+# NetBeans
+**/nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+nbactions.xml
+nb-configuration.xml
+
+# JetBrains IDEs
+# Covers JetBrains IDEs:
+# IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm,
+# CLion, Android Studio and WebStorm
+# Reference:
+# https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+.idea/
+*.iml
+*.iws
+*.ipr
+
+## JetBrains IDEs: CMake
+cmake-build-*/
+
+## JetBrains IDEs: mpeltonen/sbt-idea plugin
+.idea_modules/
+
+## JetBrains IDEs: JIRA plugin
+atlassian-ide-plugin.xml
+
+## JetBrains IDEs: Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+# go
+
+## go: Test binary, build with `go test -c`
+*.test
+
+## go: Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+## go: Project-local glide cache,
+# RE: https://github.com/Masterminds/glide/issues/736
+.glide/
+
+# Node
+
+## Node: Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+## Node: Directory for instrumented libs generated by jscoverage/JSCover
+lib-cov
+
+## Node: Coverage directory used by tools like istanbul
+coverage
+
+## Node: nyc test coverage
+.nyc_output
+
+## Node: Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+## Node: Bower dependency directory (https://bower.io/)
+bower_components
+
+## Node: node-waf configuration
+.lock-wscript
+
+## Node: Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release
+
+## Node: Dependency directories
+node_modules/
+jspm_packages/
+
+## Node: TypeScript v1 declaration files
+typings/
+
+## Node: Optional npm cache directory
+.npm
+
+## Node: Optional eslint cache
+.eslintcache
+
+## Node: Optional REPL history
+.node_repl_history
+
+## Node: Yarn Integrity file
+.yarn-integrity
+
+## Node: next.js build output
+.next
+
+## Node: nuxt.js build output
+.nuxt
+
+## Node: vuepress build output
+.vuepress/dist
+
+## Node: Serverless directories
+.serverless
+
