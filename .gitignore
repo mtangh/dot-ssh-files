@@ -500,3 +500,17 @@ typings/
 ## Node: Serverless directories
 .serverless
 
+
+#
+# ${dotgitdest}.d
+#
+
+# ssh/config.d
+ssh/config.d/*
+!ssh/config.d/.gitkeep
+!ssh/config.d/0*.conf
+# ssh/keys
+ssh/keys/*
+!ssh/keys/.gitkeep
+
+# End of '${dotgitdest}.d'
