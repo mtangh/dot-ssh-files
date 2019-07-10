@@ -15,6 +15,7 @@ _tagname=".${BASE}"
 _rebuild=0
 _cleanup=0
 _verbose=0
+_quietly=0
 _dry_run=0
 _debug_f=0
 
@@ -36,16 +37,33 @@ _USAGE_
   exit $exitstat
 }
 
+# dir list
+_get_dir_list() {
+  local _dirpath=""
+  printf "%b" "${basedirs}" |sort -u |egrep -v '^$' |
+  while read _dirpath
+  do
+    [[ $_dirpath =~ /$ ]] && {
+      _dirpath="${_dirpath%/*}"
+    }
+    echo "$_dirpath"
+  done
+  return 0
+}
+
 # Echo
 _echo() {
-  echo "${BASE}: $@"
+  [ ${_quietly} -eq 0 ] && {
+    echo "${BASE}: $@"
+  } || :
   return 0
 }
 
 # Verbose
 _verbose() {
-  [ $_verbose -ne 0 ] && {
-    echo "${BASE}: $@"; }
+  [ ${_verbose} -ne 0 ] && {
+    _echo "$@";
+  } || :
   return 0
 }
 
@@ -60,10 +78,11 @@ do
     fi
     ;;
   -R|--rebuild) _rebuild=1; _cleanup=1 ;;
-  -c|--clean)   _cleanup=1 ;;
-  -D|--debug)   _debug_f=1 ;;
-  -d|--dry-run) _dry_run=1 ;;
-  -v|--verbose) _verbose=1 ;;
+  -c|--clean)   _rebuild=0; _cleanup=1 ;;
+  -D|--debug)   _debug_f=1; _quietly=0 ;;
+  -d|--dry-run) _dry_run=1; _quietly=0 ;;
+  -v|--verbose) _verbose=1; _quietly=0 ;;
+  -q|--quiet)   _verbose=0; _quietly=1 ;;
   -h|--help)    usage 0 ;;
   -*)           usage 1 ;;
   *)
@@ -84,8 +103,8 @@ done
 set -Cu
 
 # Enable trace, verbose
-[ $_debug_f -ne 0 ] || {
-  PS4='>(${BASH_SOURCE}:${LINENO})${FUNCNAME:+:$FUNCNAME()}: ';
+[ $_debug_f -eq 0 ] || {
+  PS4='>(${BASH_SOURCE:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: ';
   export PS4
   set -xv
   _dry_run=1
@@ -108,34 +127,36 @@ base_dir=""
 keep_dir=""
 
 # Cleanup
-[ $_cleanup -ne 0 ] && {
+[ ${_cleanup} -ne 0 ] && {
 
   findcmd=$(
     [ $_dry_run -eq 0 ] && echo "rm -f"
     [ $_dry_run -eq 0 ] || echo "echo"; )
 
   # Remove gitkeep
-  printf "%b" "${basedirs}" |sort -u |
+  _get_dir_list |
   while read base_dir
   do
     # Print
-    _echo "Cleanup '$base_dir'."
+    _echo "Cleanup: '$base_dir'."
     # Find 'gitkeep' file under the base_dir and remove it.
     find "${base_dir}" \
-      -name "${_tagname}" -a type f \
-      -print -exec $findcmd {} \; ;
+      -name "${_tagname}" -a -type f \
+      -print -exec $findcmd {} \; |
+    while read printent
+    do
+      _verbose "Cleanup: '${printent}'."
+    done
   done 2>/dev/null
-  echo
-  
   # Rebuild ?
   [ $_rebuild -eq 0 ] && {
     exit 0
   }
 
-} || : # [ $_cleanup -ne 0 ]
+} || : # [ ${_cleanup} -ne 0 ]
 
 # Process dirs
-printf "%b" "${basedirs}" |sort -u |
+_get_dir_list |
 while read base_dir
 do
 

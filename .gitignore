@@ -502,7 +502,7 @@ typings/
 
 
 #
-# ${dotgitdest}.d
+# .gitignore.d
 #
 
 # ssh/config.d
@@ -513,4 +513,4 @@ ssh/config.d/*
 ssh/keys/*
 !ssh/keys/.gitkeep
 
-# End of '${dotgitdest}.d'
+# End of '.gitignore.d'
