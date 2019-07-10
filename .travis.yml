@@ -3,6 +3,8 @@
 
 language: minimal
 
+dist: xenial
+
 # Use the new container infrastructure
 sudo: false
 
