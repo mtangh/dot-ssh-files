@@ -51,7 +51,7 @@ set -Cu
 
 # Enable trace, verbose
 [ $_dotgot_dbgrun -eq 0 ] || {
-  PS4='>(${BASH_SOURCE}:${LINENO})${FUNCNAME:+:$FUNCNAME()}: ';
+  PS4='>(${BASH_SOURCE:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
   export PS4
   set -xv
 }
@@ -129,8 +129,8 @@ fi
       
       [ "${fullpath}" = "${realpath}" ] || {
         printf "Symlink '%s' to '%s': " "${fullpath}" "${HOME}/.ssh/${ent_name}"
-        ln -sf "${fullpath}" "./${ent_name}" &&
-        chmod -h "${filemode}" "./${ent_name}" &&
+        ln -sf "${fullpath}" "./${ent_name}" 2>/dev/null &&
+        chmod "${filemode}" "./${ent_name}" 2>/dev/null &&
         echo "done." ||
         echo "fail."
       }
