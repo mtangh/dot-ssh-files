@@ -23,11 +23,12 @@ script:
     [ -d "$HOME/.ssh/config.d" ] &&
     [ -d "$HOME/.ssh/keys" ] &&
     [ -x "$HOME/.ssh/ssh_config_cat.sh" ] &&
-    ssh -Gv localhost |
-    egrep -i '^CheckHostIP[ ]+no$' &&
     bash -n "$HOME/.ssh/ssh_config_cat.sh" &&
     bash "$HOME/.ssh/ssh_config_cat.sh" |
+    tee "$HOME/.ssh/config_all" |
     egrep -i '^[ \t]CheckHostIP[ \t]+no$' &&
+    ssh -Gv -F "$HOME/.ssh/config_all" localhost |
+    egrep -i '^CheckHostIP[ ]+no$' &&
     : "OK";
 
 # Notifications
