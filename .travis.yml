@@ -15,8 +15,8 @@ install: true
 script:
 
   - |
-    ssh -V
     set -x
+    ssh -V
     bash -n install.sh &&
     bash install.sh &&
     [ -r "$HOME/.ssh/config" ] &&
@@ -26,10 +26,11 @@ script:
     [ -x "$HOME/.ssh/ssh_config_cat.sh" ] &&
     bash -n "$HOME/.ssh/ssh_config_cat.sh" &&
     bash "$HOME/.ssh/ssh_config_cat.sh" |
-    tee "$HOME/.ssh/config_all" |
-    egrep -i '^[ \t]CheckHostIP[ \t]+no$' &&
+    tee "$HOME/.ssh/config_all"
+    cat "$HOME/.ssh/config_all" |
+    egrep -i '^[ \t]*(LogLevel[ \t]VERBOSE|CheckHostIP[ \t]+no)[ \t]*$' &&
     ssh -Gv -F "$HOME/.ssh/config_all" localhost |
-    egrep -i '^CheckHostIP[ ]+no$' &&
+    egrep -i '^[ \t]*(LogLevel[ \t]VERBOSE|CheckHostIP[ \t]+no)[ \t]*$' &&
     : "OK";
 
 # Notifications
