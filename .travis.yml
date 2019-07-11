@@ -16,6 +16,7 @@ script:
 
   - |
     ssh -V
+    set -x
     bash -n install.sh &&
     bash install.sh &&
     [ -r "$HOME/.ssh/config" ] &&
