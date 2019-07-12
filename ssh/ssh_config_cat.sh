@@ -12,6 +12,7 @@ ssh_cnfdir=""
 # Flags
 rm_comment=0
 ignore_inc=0
+_xtrace_on=0
 
 # Options
 while [ $# -gt 0 ]
@@ -29,6 +30,9 @@ do
   --ignore-include*)
     ignore_inc=1
     ;;
+  -D*|-debug*|--debug*)
+    _xtrace_on=1
+    ;;
   -h|-help*|--help*)
     cat <<_USAGE_
 Usage: $THIS [-f /path/to/ssh_config] [--remove-comment] [--ignore-include]
@@ -44,6 +48,13 @@ done
 
 # No unbound vars
 set -Cu
+
+# Enable trace, verbose
+[ $_xtrace_on -eq 0 ] || {
+  PS4='>(${BASH_SOURCE:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
+  export PS4
+  set -xv
+}
 
 # SSH config
 [ -n "${ssh_config}" ] || {
@@ -67,17 +78,15 @@ do
   if [ $rm_comment -ne 0 ]
   then
     if [ -n "${row_data}" ]
-    then
-      row_data=$(echo ${row_data%%#*})
+    then row_data=$(echo ${row_data%%#*})
     fi
     if [ -z "${row_data}" ]
-    then
-      continue
+    then continue
     fi
   fi || :
 
   printf "%s" "${row_data}" |
-  egrep -i '^[ \t]*include[ \t]+[^ \t].*$' 1>/dev/null || {
+  egrep -i '^[ \t]*include[ \t]+[^ \t].*$' 1>/dev/null 2>&1 || {
     printf "%s" "${row_data}"; echo
     continue
   }
@@ -85,20 +94,22 @@ do
   inc_file="${row_data%%#*}"
   inc_file=$(
     echo "${inc_file#*nclude}" |tr '\t' ' ' |
-    sed -e 's;  *; ;g' -e 's;^ *;;g' -e 's; *$;;')
+    sed -e 's;  *; ;g' -e 's;^ *;;g' -e 's; *$;;' 2>/dev/null)
 
   if [ $ignore_inc -eq 0 ]
   then
 
     echo "# <<< Include ${inc_file}"
 
-    ( if [ -n "${ssh_cnfdir}" ]
-      then cd "${ssh_cnfdir}"
-      else :
-      fi
-      if [ -z "${inc_file}" ]
-      then cat ${inc_file}
-      else echo "# ERROR: '${inc_file}': no such file or dir."
+    ( if [ -n "${inc_file}" ]
+      then
+        if [ -n "${ssh_cnfdir}" ]
+        then cd "${ssh_cnfdir}" 2>/dev/null
+        else :
+        fi
+        cat ${inc_file}
+      else
+        echo "# ERROR: '${inc_file}': no such file or dir."
       fi; )
 
     echo "# >>> Include ${inc_file}"
@@ -107,7 +118,7 @@ do
     echo "# <<< Include ${inc_file} >>>"
   fi
 
-done 2>/dev/null
+done
 
 # End
 exit 0

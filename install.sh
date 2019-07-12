@@ -9,30 +9,62 @@ BASE="${THIS%%.*}"
 # Path
 PARH=/usr/bin:/bin; export PATH
 
-# dot-ssh-files URL
-DOT_SSHCNF_URL="${DOT_SSHCNF_URL:-https://github.com/mtangh/dot-ssh-files.git}"
-
 # Platform
 DOT_SSHCONF_OS=$(uname -s|tr '[A-Z]' '[a-z]')
 
+# dot-ssh-files URL
+DOT_SSHCNF_URL="${DOT_SSHCNF_URL:-https://github.com/mtangh/dot-ssh-files.git}"
+
 # XDG Config Dir
-DOT_SSHCNF_XDG="${HOME}/.config"
+DOT_SSH_XDGCNF="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 # Install Dir
-DOT_SSHCNF_DIR="${DOT_SSHCNF_XDG}/dot-ssh-files"
+DOT_SSHCNF_XDG="${DOT_SSHCNF_XDG:-$DOT_SSH_XDGCNF/dot-ssh-files}"
+
+# SSH Config Dir
+DOT_SSHCNF_DIR="${DOT_SSHCNF_DIR:-$HOME/.ssh}"
+
+# Temp die
+DOT_SSHCNF_TMP="${TMPDIR:-/tmp}/.${BASE}.$$"
 
 # Git
 dot_sshcnf_git="$(type -P git)"
 
 # Flags
-_dotgot_dbgrun=0
+_x_dryrun_mode=0
+_xtrace_enable=0
+
+# Debug
+case "${DEBUG:-NO}" in
+0|[Nn][Oo]|[Oo][Ff][Ff])
+  ;;
+*)
+  _x_dryrun_mode=1
+  _xtrace_enable=1
+  ;;
+esac || :
+
+# Cleanup
+_cleanup() {
+  [ -n "${DOT_SSHCNF_TMP}" ] && {
+    rm -rf "${DOT_SSHCNF_TMP}"
+  }  1>/dev/null 2>&1 || :
+  return 0
+}
 
 # Parsing command line options
 while [ $# -gt 0 ]
 do
   case "$1" in
-  -D*|--debug*)
-    _dotgot_dbgrun=1
+  -D*|-debug*|--debug*)
+    _xtrace_enable=1
+    ;;
+  -n*|-dry-run*|--dry-run*)
+    _x_dryrun_mode=1
+    ;;
+  -*)
+    echo "$THIS: ERROE: Illegal option '${1}'." 1>&2
+    exit 1
     ;;
   *)
     ;;
@@ -43,37 +75,47 @@ done
 # Check
 [ -x "${dot_sshcnf_git}" ] || {
   echo "$THIS: ERROR: '${dot_sshcnf_git}': Command not found." 1>&2
-  exit 11
+  exit 1
 }
 
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
 
 # Enable trace, verbose
-[ $_dotgot_dbgrun -eq 0 ] || {
+[ $_xtrace_enable -eq 0 ] || {
   PS4='>(${BASH_SOURCE:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
   export PS4
   set -xv
 }
 
+# Dry run
+[ $_x_dryrun_mode -eq 0 ] || {
+  DOT_SSH_XDGCNF="${DOT_SSHCNF_TMP}${DOT_SSH_XDGCNF}"
+  DOT_SSHCNF_DIR="${DOT_SSHCNF_TMP}${DOT_SSHCNF_DIR}"
+}
+
+# Set trap
+trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
+trap "_cleanup" EXIT
+
 # Checking install base
-[ -d "${DOT_SSHCNF_XDG}" ] || {
-  mkdir -p "${DOT_SSHCNF_XDG}" &&
-  chmod 0755 "${DOT_SSHCNF_XDG}"
+[ -d "${DOT_SSH_XDGCNF}" ] || {
+  mkdir -p "${DOT_SSH_XDGCNF}" &&
+  chmod 0755 "${DOT_SSH_XDGCNF}"
 } 2>/dev/null
 
 # Install or update
-if [ ! -d "${DOT_SSHCNF_DIR}/.git" ]
+if [ ! -d "${DOT_SSHCNF_XDG}/.git" ]
 then
 
   echo "Git Clone from '${DOT_SSHCNF_URL}'."
 
   # Install
-  ( [ -d "${DOT_SSHCNF_DIR}" ] && {
-      mv -f "${DOT_SSHCNF_DIR}" \
-            "${DOT_SSHCNF_DIR}.$(date +'%Y%m%dT%H%M%S')"
+  ( [ -d "${DOT_SSHCNF_XDG}" ] && {
+      mv -f "${DOT_SSHCNF_XDG}" \
+            "${DOT_SSHCNF_XDG}.$(date +'%Y%m%dT%H%M%S')"
     } || :
-    cd "${DOT_SSHCNF_XDG}" && {
+    cd "${DOT_SSH_XDGCNF}" && {
       ${dot_sshcnf_git} clone "${DOT_SSHCNF_URL}";
     }; )
 
@@ -82,7 +124,7 @@ else
   echo "Git Pull from '${DOT_SSHCNF_URL}'."
 
   # Update
-  ( cd "${DOT_SSHCNF_DIR}" && {
+  ( cd "${DOT_SSHCNF_XDG}" && {
       ${dot_sshcnf_git} stash save "$(date +%'Y%m%dT%H%M%S')";
       ${dot_sshcnf_git} pull;
     }; )
@@ -90,23 +132,26 @@ else
 fi
 
 # $HOME/.ssh
-[ -d "${HOME}/.ssh" ] || {
-  ( mkdir -p "${HOME}/.ssh" &&
-    cd "${HOME}/.ssh" &&
+[ -d "${DOT_SSHCNF_DIR}" ] || {
+  ( mkdir -p "${DOT_SSHCNF_DIR}" &&
+    cd "${DOT_SSHCNF_DIR}" &&
     chmod 0700 .; )
 } 2>/dev/null
 
 # Setup
-( cd "${HOME}/.ssh" && {
+( cd "${DOT_SSHCNF_DIR}" && {
 
   echo "Pwd '$(pwd)'."
 
-  for sshentry in $(
-    cd "${DOT_SSHCNF_DIR}/ssh"; find . |sort)
+  for sshentry in $(cd "${DOT_SSHCNF_XDG}/ssh"; find . |sort)
   do
 
     ent_name="${sshentry#*./}"
-    fullpath="${DOT_SSHCNF_DIR}/ssh/${ent_name}"
+    fullpath="${DOT_SSHCNF_XDG}/ssh/${ent_name}"
+    
+    echo "${ent_name}" |
+    egrep "^.git" 1>/dev/null 2>&1 &&
+    continue || :
 
     if [ -d "${fullpath}" ]
     then
@@ -114,7 +159,7 @@ fi
       [ -d "./${ent_name}" ] || {
         mkdir -p "./${ent_name}" &&
         chmod 0700 "./${ent_name}" &&
-        echo "Mkdir '${HOME}/.ssh/${ent_name}'." || :
+        echo "Mkdir '${DOT_SSHCNF_DIR}/${ent_name}'." || :
       } 2>/dev/null
 
     else
