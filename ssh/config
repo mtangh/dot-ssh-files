@@ -49,10 +49,10 @@
 # PATTERNS:
 # A pattern consists of zero or more non-whitespace characters, `*' (a
 # wildcard that matches zero or more characters), or `?' (a wildcard
-# that matches exactly one character). For example, to specify a set of 
+# that matches exactly one character). For example, to specify a set of
 # declarations for any host in the ".co.uk" set of domains, the
 # following pattern could be used:
-# 
+#
 #  Host *.co.uk
 #
 # The following pattern would match any host in the 192.168.0.[0-9]
@@ -112,7 +112,7 @@
 # Specifies a pattern-list of unknown options to be ignored if they are
 # encountered in configuration parsing. This may be used to suppress
 # errors if ssh_config contains options that are unrecognised by ssh(1).
-# It is recommended that IgnoreUnknown be listed early in the 
+# It is recommended that IgnoreUnknown be listed early in the
 # configuration file as it will not be applied to unknown options that
 # appear before it.
 IgnoreUnknown Include,UseKeychain,AddKeysToAgent,SyslogFacility
@@ -139,7 +139,7 @@ Host *
 	# tries version 2 and falls back to version 1 if version 2 is not
 	# available.
 	Protocol 2
-	
+
 	# LogLevel:
 	# Gives the verbosity level that is used when logging messages from
 	# ssh(1). The possible values are: QUIET, FATAL, ERROR, INFO, VERBOSE,
@@ -150,15 +150,15 @@ Host *
 
 	# SyslogFacility:
 	# Gives the facility code that is used when logging messages from
-	# ssh(1). The possible values are: DAEMON, USER, AUTH, LOCAL0 - LOCAL7. 
+	# ssh(1). The possible values are: DAEMON, USER, AUTH, LOCAL0 - LOCAL7.
 	# The default is USER.
 	SyslogFacility USER
 
-	# VersionAddendum:
-	# Specifies a string to append to the regular version string to
-	# identify OS- or site-specific modifications. The default is
-	# ``FreeBSD-20180909''. The value none may be used to disable this.
-	VersionAddendum none
+	## VersionAddendum:
+	## Specifies a string to append to the regular version string to
+	## identify OS- or site-specific modifications. The default is
+	## ``FreeBSD-20180909''. The value none may be used to disable this.
+	#VersionAddendum none
 
 	# EscapeChar:
 	# Sets the escape character (default: `~'). The escape character can
@@ -191,20 +191,20 @@ Host *
 	# key authentication. The argument must be yes or no (the default).
 	HostbasedAuthentication no
 
-	# RhostsRSAAuthentication:
-	# Specifies whether to try rhosts based authentication with RSA host
-	# authentication. The argument must be ''yes'' or ''no''. The default
-	# is ''no''. This option applies to protocol version 1 only and
-	# requires ssh(1) to be setuid root.
-	RhostsRSAAuthentication no
+	## RhostsRSAAuthentication:
+	## Specifies whether to try rhosts based authentication with RSA host
+	## authentication. The argument must be ''yes'' or ''no''. The default
+	## is ''no''. This option applies to protocol version 1 only and
+	## requires ssh(1) to be setuid root.
+	#RhostsRSAAuthentication no
 
-	# RSAAuthentication:
-	# Specifies whether to try RSA authentication. The argument to this
-	# keyword must be ''yes'' or ''no''. RSA authentication will only be
-	# attempted if the identity file exists, or an authentication agent
-	# is running. The default is ''yes''. Note that this option applies
-	# to protocol version 1 only.
-	RSAAuthentication no
+	## RSAAuthentication:
+	## Specifies whether to try RSA authentication. The argument to this
+	## keyword must be ''yes'' or ''no''. RSA authentication will only be
+	## attempted if the identity file exists, or an authentication agent
+	## is running. The default is ''yes''. Note that this option applies
+	## to protocol version 1 only.
+	#RSAAuthentication no
 
 	# GSSAPIAuthentication:
 	# Specifies whether user authentication based on GSSAPI is allowed.
@@ -284,7 +284,7 @@ Host *
 
 	# CheckHostIP:
 	# If set to yes, ssh(1) will additionally check the host IP address
-	# in the known_hosts file. 
+	# in the known_hosts file.
 	CheckHostIP yes
 
 	# StrictHostKeyChecking:
@@ -299,7 +299,7 @@ Host *
 	#GlobalKnownHostsFile /etc/ssh/ssh_known_hosts, /etc/ssh/ssh_known_hosts2
 
 	# UserKnownHostsFile:
-	# Specifies one or more files to use for the user host key 
+	# Specifies one or more files to use for the user host key
 	# database, separated by whitespace. The default is
 	# ~/.ssh/known_hosts, ~/.ssh/known_hosts2.
 	UserKnownHostsFile ~/.ssh/known_hosts, ~/.ssh/known_hosts2
@@ -320,7 +320,7 @@ Host *
 
 	# Ciphers:
 	# Specifies the ciphers allowed for protocol version 2 in order of
-	# preference. Multiple ciphers must be comma-separated. 
+	# preference. Multiple ciphers must be comma-separated.
 	Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
 
 	# HostKeyAlgorithms:
@@ -330,7 +330,7 @@ Host *
 
 	# KexAlgorithms:
 	# Specifies the available KEX (Key Exchange) algorithms. Multiple
-	# algorithms must be comma-separated. 
+	# algorithms must be comma-separated.
 	KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
 
 	# Macs:
@@ -361,12 +361,12 @@ Host *
 
 	# ConnectTimeout:
 	# Specifies the timeout (in seconds) used when connecting to the SSH
-	# server, instead of using the default system TCP timeout. 
+	# server, instead of using the default system TCP timeout.
 	ConnectTimeout 15
 
 	# ConnectionAttempts:
 	# Specifies the number of tries (one per second) to make before exiting.
-	# The argument must be an integer. 
+	# The argument must be an integer.
 	ConnectionAttempts 2
 
 	# ServerAliveInterval:
@@ -414,34 +414,34 @@ Host *
 	# or ''no''. The default is ''no''.
 	Compression yes
 
-	# LocalForward:
-	# Specifies that a TCP port on the local machine be forwarded over the
-	# secure channel to the specified host and port from the remote machine.
-	# The first argument must be [bind_address:]port and the second argument
-	# must be host:hostport. IPv6 addresses can be specified by enclosing
-	# addresses in square brackets.
-	LocalForward none
+	## LocalForward:
+	## Specifies that a TCP port on the local machine be forwarded over the
+	## secure channel to the specified host and port from the remote machine.
+	## The first argument must be [bind_address:]port and the second argument
+	## must be host:hostport. IPv6 addresses can be specified by enclosing
+	## addresses in square brackets.
+	#LocalForward none
 
-	# RemoteForward:
-	# Specifies that a TCP port on the remote machine be forwarded over the
-	# secure channel. The remote port may either be forwarded to a specified
-	# host and port from the local machine, or may act as a SOCKS 4/5 proxy
-	# that allows a remote client to connect to arbitrary destinations from
-	# the local machine. The first argument must be [bind_address:]port If
-	# forwarding to a specific destination then the second argument must be
-	# host:hostport, otherwise if no destination argument is specified then
-	# the remote forwarding will be established as a SOCKS proxy. IPv6
-	# addresses can be specified by enclosing addresses in square brackets.
-	RemoteForward none
+	## RemoteForward:
+	## Specifies that a TCP port on the remote machine be forwarded over the
+	## secure channel. The remote port may either be forwarded to a specified
+	## host and port from the local machine, or may act as a SOCKS 4/5 proxy
+	## that allows a remote client to connect to arbitrary destinations from
+	## the local machine. The first argument must be [bind_address:]port If
+	## forwarding to a specific destination then the second argument must be
+	## host:hostport, otherwise if no destination argument is specified then
+	## the remote forwarding will be established as a SOCKS proxy. IPv6
+	## addresses can be specified by enclosing addresses in square brackets.
+	#RemoteForward none
 
-	# DynamicForward:
-	# Specifies that a TCP port on the local machine be forwarded over the
-	# secure channel, and the application protocol is then used to determine
-	# where to connect to from the remote machine. The argument must be
-	# [bind_address:]port. IPv6 addresses can be specified by enclosing
-	# addresses in square brackets. By default, the local port is bound in
-	# accordance with the GatewayPorts setting.  
-	DynamicForward none
+	## DynamicForward:
+	## Specifies that a TCP port on the local machine be forwarded over the
+	## secure channel, and the application protocol is then used to determine
+	## where to connect to from the remote machine. The argument must be
+	## [bind_address:]port. IPv6 addresses can be specified by enclosing
+	## addresses in square brackets. By default, the local port is bound in
+	## accordance with the GatewayPorts setting.
+	#DynamicForward none
 
 	# GatewayPorts:
 	# Specifies whether remote hosts are allowed to connect to local
@@ -478,9 +478,9 @@ Host *
 	# user's shell `exec' directive to avoid a lingering shell process.
 	ProxyCommand none
 
-	# SetEnv:
-	# Directly specify one or more environment variables and their contents
-	# to be sent to the server. Similarly to SendEnv, the server must be
-	# prepared to accept the environment variable.
-	SetEnv LANG LC_*
+	## SetEnv:
+	## Directly specify one or more environment variables and their contents
+	## to be sent to the server. Similarly to SendEnv, the server must be
+	## prepared to accept the environment variable.
+	#SetEnv LANG LC_*
 
