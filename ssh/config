@@ -465,12 +465,12 @@ Host *
 	# line, and is executed with the user's shell.
 	LocalCommand none
 
-	# RemoteCommand:
-	# Specifies a command to execute on the remote machine after successfully
-	# connecting to the server. The command string extends to the end of the
-	# line, and is executed with the user's shell. Arguments to RemoteCommand
-	# accept the tokens described in the TOKENS section.
-	RemoteCommand none
+	## RemoteCommand:
+	## Specifies a command to execute on the remote machine after successfully
+	## connecting to the server. The command string extends to the end of the
+	## line, and is executed with the user's shell. Arguments to RemoteCommand
+	## accept the tokens described in the TOKENS section.
+	#RemoteCommand none
 
 	# ProxyCommand:
 	# Specifies the command to use to connect to the server. The command
