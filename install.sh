@@ -27,10 +27,14 @@ DOT_SSHCNF_DIR="${DOT_SSHCNF_DIR:-$HOME/.ssh}"
 # Temp die
 DOT_SSHCNF_TMP="${TMPDIR:-/tmp}/.${BASE}.$$"
 
+# Ssh
+dot_sshcnf_ssh="$(type -P ssh)"
+
 # Git
 dot_sshcnf_git="$(type -P git)"
 
 # Flags
+_inc_directive=0
 _x_dryrun_mode=0
 _xtrace_enable=0
 
@@ -63,7 +67,7 @@ do
     _x_dryrun_mode=1
     ;;
   -*)
-    echo "$THIS: ERROE: Illegal option '${1}'." 1>&2
+    echo "$THIS: ERROR: Illegal option '${1}'." 1>&2
     exit 1
     ;;
   *)
@@ -73,6 +77,10 @@ do
 done
 
 # Check
+[ -x "${dot_sshcnf_ssh}" ] || {
+  echo "$THIS: ERROR: '${dot_sshcnf_ssh}': Command not found." 1>&2
+  exit 1
+}
 [ -x "${dot_sshcnf_git}" ] || {
   echo "$THIS: ERROR: '${dot_sshcnf_git}': Command not found." 1>&2
   exit 1
@@ -97,6 +105,13 @@ set -Cu
 # Set trap
 trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
 trap "_cleanup" EXIT
+
+# Include ?
+_inc_directive=$(
+  : && {
+    "${dot_sshcnf_ssh}" -oInclude=/dev/null localhost 2>&1 |
+    egrep -i 'bad[ \t]+configuration[ \t]+option:[ \t]+include$'
+  } 1>/dev/null 2>&1 && echo "0" || echo "1"; )
 
 # Checking install base
 [ -d "${DOT_SSH_XDGCNF}" ] || {
@@ -163,19 +178,29 @@ fi
       } 2>/dev/null
 
     else
-    
-      realpath=$(readlink "./${ent_name}" 2>/dev/null || :)
+
+      destname=$(
+        case "${ent_name}::${_inc_directive}" in
+        config::0)
+          echo "${ent_name}.tmpl" ;;
+        *)
+          echo "${ent_name}" ;;
+        esac 2>/dev/null; )
 
       filemode=$(
-        case "${ent_name}" in
-        *.*sh) echo 0700 ;;
-        *)     echo 0600 ;;
+        case "${destname}" in
+        *.*sh)
+          echo 0700 ;;
+        *)
+          echo 0600 ;;
         esac 2>/dev/null; )
-      
+
+      realpath=$(readlink "./${destname}" 2>/dev/null || :;)
+
       [ "${fullpath}" = "${realpath}" ] || {
-        printf "Symlink '%s' to '%s': " "${fullpath}" "${HOME}/.ssh/${ent_name}"
-        ln -sf "${fullpath}" "./${ent_name}" 2>/dev/null &&
-        chmod "${filemode}" "./${ent_name}" 2>/dev/null &&
+        printf "Symlink '%s' to '%s': " "${fullpath}" "${DOT_SSHCNF_DIR}/${destname}"
+        ln -sf "${fullpath}" "./${destname}" 2>/dev/null &&
+        chmod "${filemode}" "./${destname}" 2>/dev/null &&
         echo "done." ||
         echo "fail."
       }
@@ -183,6 +208,13 @@ fi
     fi
 
   done
+
+  if [ $_inc_directive -eq 0 ]
+  then
+    [ -x "${DOT_SSHCNF_DIR}/ssh_config_cat.sh" ] && {
+      ${DOT_SSHCNF_DIR}/ssh_config_cat.sh -f${DOT_SSHCNF_DIR}/config.tmpl
+    } 1>"${DOT_SSHCNF_DIR}/config" || :
+  fi
 
 }; )
 

@@ -62,7 +62,7 @@ set -Cu
 }
 [ -r "${ssh_config}" ] || {
   cat <<_MSG_
-$THIS: ERRROR '${ssh_config}' no such file or directory.
+$THIS: ERROR: '${ssh_config}' no such file or directory.
 _MSG_
   exit 1
 }
