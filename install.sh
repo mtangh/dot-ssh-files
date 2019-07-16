@@ -15,11 +15,15 @@ DOT_SSHCONF_OS=$(uname -s|tr '[A-Z]' '[a-z]')
 # dot-ssh-files URL
 DOT_SSHCNF_URL="${DOT_SSHCNF_URL:-https://github.com/mtangh/dot-ssh-files.git}"
 
+# dot-ssh-files name
+DOT_SSHCNF_PRJ="${DOT_SSHCNF_URL##*/}"
+DOT_SSHCNF_PRJ="${DOT_SSHCNF_PRJ%.git*}"
+
 # XDG Config Dir
 DOT_SSH_XDGCNF="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 # Install Dir
-DOT_SSHCNF_XDG="${DOT_SSHCNF_XDG:-$DOT_SSH_XDGCNF/dot-ssh-files}"
+DOT_SSHCNF_XDG="${DOT_SSHCNF_XDG:-$DOT_SSH_XDGCNF/$DOT_SSHCNF_PRJ}"
 
 # SSH Config Dir
 DOT_SSHCNF_DIR="${DOT_SSHCNF_DIR:-$HOME/.ssh}"
@@ -48,6 +52,12 @@ case "${DEBUG:-NO}" in
   ;;
 esac || :
 
+# Echo
+_echo() {
+  echo "$THIS: $@"
+  return 0
+}
+
 # Cleanup
 _cleanup() {
   [ -n "${DOT_SSHCNF_TMP}" ] && {
@@ -67,7 +77,7 @@ do
     _x_dryrun_mode=1
     ;;
   -*)
-    echo "$THIS: ERROR: Illegal option '${1}'." 1>&2
+    _echo "ERROR: Illegal option '${1}'." 1>&2
     exit 1
     ;;
   *)
@@ -78,11 +88,11 @@ done
 
 # Check
 [ -x "${dot_sshcnf_ssh}" ] || {
-  echo "$THIS: ERROR: '${dot_sshcnf_ssh}': Command not found." 1>&2
+  _echo "ERROR: ssh '${dot_sshcnf_ssh}': Command not found." 1>&2
   exit 1
 }
 [ -x "${dot_sshcnf_git}" ] || {
-  echo "$THIS: ERROR: '${dot_sshcnf_git}': Command not found." 1>&2
+  _echo "ERROR: git '${dot_sshcnf_git}': Command not found." 1>&2
   exit 1
 }
 
@@ -106,12 +116,21 @@ set -Cu
 trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
 trap "_cleanup" EXIT
 
+# ssh version
+_echo "SSH-Version: $(${dot_sshcnf_ssh} -v)"
+
 # Include ?
 _inc_directive=$(
   : && {
     "${dot_sshcnf_ssh}" -oInclude=/dev/null localhost 2>&1 |
     egrep -i 'bad[ \t]+configuration[ \t]+option:[ \t]+include$'
   } 1>/dev/null 2>&1 && echo "0" || echo "1"; )
+
+# Include support ?
+if [ $_inc_directive -eq 0 ]
+then
+  _echo "Your ssh does not support include directive." 1>&2
+fi
 
 # Checking install base
 [ -d "${DOT_SSH_XDGCNF}" ] || {
@@ -123,7 +142,7 @@ _inc_directive=$(
 if [ ! -d "${DOT_SSHCNF_XDG}/.git" ]
 then
 
-  echo "Git Clone from '${DOT_SSHCNF_URL}'."
+  _echo "Git clone from '${DOT_SSHCNF_URL}'."
 
   # Install
   ( [ -d "${DOT_SSHCNF_XDG}" ] && {
@@ -131,12 +150,12 @@ then
             "${DOT_SSHCNF_XDG}.$(date +'%Y%m%dT%H%M%S')"
     } || :
     cd "${DOT_SSH_XDGCNF}" && {
-      ${dot_sshcnf_git} clone "${DOT_SSHCNF_URL}";
+      ${dot_sshcnf_git} clone "${DOT_SSHCNF_URL}"
     }; )
 
 else
 
-  echo "Git Pull from '${DOT_SSHCNF_URL}'."
+  _echo "Git pull from '${DOT_SSHCNF_URL}'."
 
   # Update
   ( cd "${DOT_SSHCNF_XDG}" && {
@@ -144,7 +163,13 @@ else
       ${dot_sshcnf_git} pull;
     }; )
 
-fi
+fi &&
+[ -d "${DOT_SSHCNF_XDG}" ] && {
+  ( cd "${DOT_SSHCNF_XDG}" &&
+    ${dot_sshcnf_git} config core.filemode false &&
+    _echo "Git config: repo=${DOT_SSHCNF_PRJ} core.filemode=off." &&
+    :; )
+} || exit $?
 
 # $HOME/.ssh
 [ -d "${DOT_SSHCNF_DIR}" ] || {
@@ -156,7 +181,7 @@ fi
 # Setup
 ( cd "${DOT_SSHCNF_DIR}" && {
 
-  echo "Pwd '$(pwd)'."
+  _echo "Pwd '$(pwd)'."
 
   for sshentry in $(cd "${DOT_SSHCNF_XDG}/ssh"; find . |sort)
   do
@@ -174,7 +199,7 @@ fi
       [ -d "./${ent_name}" ] || {
         mkdir -p "./${ent_name}" &&
         chmod 0700 "./${ent_name}" &&
-        echo "Mkdir '${DOT_SSHCNF_DIR}/${ent_name}'." || :
+        _echo "Mkdir '${DOT_SSHCNF_DIR}/${ent_name}'." || :
       } 2>/dev/null
 
     else
@@ -190,20 +215,21 @@ fi
       filemode=$(
         case "${destname}" in
         *.*sh)
-          echo 0700 ;;
+          echo 0755 ;;
         *)
           echo 0600 ;;
         esac 2>/dev/null; )
 
       realpath=$(readlink "./${destname}" 2>/dev/null || :;)
 
-      [ "${fullpath}" = "${realpath}" ] || {
-        printf "Symlink '%s' to '%s': " "${fullpath}" "${DOT_SSHCNF_DIR}/${destname}"
-        ln -sf "${fullpath}" "./${destname}" 2>/dev/null &&
-        chmod "${filemode}" "./${destname}" 2>/dev/null &&
-        echo "done." ||
-        echo "fail."
-      }
+      if [ "${fullpath}" = "${realpath}" ]
+      then
+        printf "$THIS: Symlink '%s' to '%s' ... " "${fullpath}" "${destname}"
+        : && {
+          ln -sf "${fullpath}" "./${destname}" 1>/dev/null 2>&1 &&
+          chmod "${filemode}" "./${destname}" 1>/dev/null 2>&1
+        } && echo "OK." || echo "NG."
+      fi
 
     fi
 
@@ -211,16 +237,15 @@ fi
 
   if [ $_inc_directive -eq 0 ]
   then
-    [ -x "${DOT_SSHCNF_DIR}/ssh_config_cat.sh" ] && {
-      ${DOT_SSHCNF_DIR}/ssh_config_cat.sh -f${DOT_SSHCNF_DIR}/config.tmpl
-    } 1>"${DOT_SSHCNF_DIR}/config" || :
+    [ -x "./ssh_config_cat.sh" -a -r "./config.tmpl" ] && {
+      ./ssh_config_cat.sh -fconfig.tmpl
+    } 1>|"./config" || :
   fi
 
 }; )
 
 # Finish installation
-echo
-echo "Done."
+_echo "Done."
 
 # End
 exit 0
