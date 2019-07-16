@@ -117,7 +117,7 @@ trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
 trap "_cleanup" EXIT
 
 # ssh version
-_echo "SSH-Version: $(${dot_sshcnf_ssh} -v)"
+_echo "SSH-Version: $(${dot_sshcnf_ssh} -V)"
 
 # Include ?
 _inc_directive=$(
@@ -190,7 +190,7 @@ fi &&
     fullpath="${DOT_SSHCNF_XDG}/ssh/${ent_name}"
     
     echo "${ent_name}" |
-    egrep "^.git" 1>/dev/null 2>&1 &&
+    egrep "/.git" 1>/dev/null 2>&1 &&
     continue || :
 
     if [ -d "${fullpath}" ]

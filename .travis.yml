@@ -15,7 +15,8 @@ install: true
 script:
 
   - |
-    set -x; ssh -V
+    set -x;
+    ssh -V; ssh -oInclude=/dev/null localhost
     bash -n install.sh &&
     bash -x install.sh && {
       [ -r "$HOME/.ssh/config" ] &&
