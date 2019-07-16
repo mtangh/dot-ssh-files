@@ -22,12 +22,11 @@ script:
       [ -r "$HOME/.ssh/default.conf" ] &&
       [ -d "$HOME/.ssh/config.d/" ] &&
       [ -d "$HOME/.ssh/keys/" ] &&
-      [ -x "$HOME/.ssh/ssh_config_cat.sh" ] &&
-      cat "${HOME}/.config/dot-ssh-files/.git/config |
-      egrep -i 'filemode[ \t]+=[ \t]+false'
+      [ -x "$HOME/.ssh/ssh_config_cat.sh" ] && {
+        cat "${HOME}/.config/dot-ssh-files/.git/config" |
+        egrep -i 'filemode[ \t]+=[ \t]+false'
+      }
     } &&
-    cat "$HOME/.ssh/config" |
-    egrep -i '^[ \t]*(LogLevel[ \t]VERBOSE|CheckHostIP[ \t]+no)[ \t]*$' &&
     ssh -Gv localhost |
     egrep -i '^[ \t]*(LogLevel[ \t]VERBOSE|CheckHostIP[ \t]+no)[ \t]*$' &&
     : "OK";
