@@ -88,5 +88,10 @@ fi
   ssh_retval=$?
 } 2>&1
 
+# OK ?
+[ "${ssh_retval:-0}" = "0" ] && {
+  echo; echo "OK."
+}
+
 # End
 exit $ssh_retval

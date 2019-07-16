@@ -15,24 +15,26 @@ install: true
 script:
 
   - |
-    set -x;
-    ssh -V;
-    ssh -oInclude=/dev/null localhost 2>&1 |
-    egrep -i 'Bad[ \t]+configuration[ \t]+option:[ \t]+include' &&
-    echo OK || echo NG
-    bash -n install.sh &&
-    bash -x install.sh && {
-      [ -r "$HOME/.ssh/config" ] &&
-      [ -r "$HOME/.ssh/default.conf" ] &&
-      [ -d "$HOME/.ssh/config.d/" ] &&
-      [ -d "$HOME/.ssh/keys/" ] &&
-      [ -x "$HOME/.ssh/ssh_config_cat.sh" ] && {
-        cat "${HOME}/.config/dot-ssh-files/.git/config" |
-        egrep -i 'filemode[ \t]+=[ \t]+false'
+    set -x; ssh -V;
+    : "install.sh" && {
+      bash -n install.sh &&
+      bash -x install.sh && {
+        [ -r "$HOME/.ssh/config" ] &&
+        [ -r "$HOME/.ssh/default.conf" ] &&
+        [ -d "$HOME/.ssh/config.d/" ] &&
+        [ -d "$HOME/.ssh/keys/" ] &&
+        [ -x "$HOME/.ssh/ssh_config_cat.sh" ] &&
+        [ -x "$HOME/.ssh/ssh_config_check.sh" ] &&
+        ( cd "${HOME}/.config/dot-ssh-files" &&
+          git config --get core.filemode |
+          egrep -i '^false$'; )
       }
     } &&
-    ssh -Gv localhost |
-    egrep -i '^[ \t]*(LogLevel[ \t]VERBOSE|CheckHostIP[ \t]+no)[ \t]*$' &&
+    : "ssh_config_check.sh" && {
+      bash -n "$HOME/.ssh/ssh_config_cat.sh" &&
+      bash -x "$HOME/.ssh/ssh_config_cat.sh" |
+      egrep -i '^[ \t]*(LogLevel[ \t]VERBOSE|CheckHostIP[ \t]+no)[ \t]*$'
+    } &&
     : "OK";
 
 # Notifications

@@ -166,9 +166,11 @@ else
 fi &&
 [ -d "${DOT_SSHCNF_XDG}" ] && {
   ( cd "${DOT_SSHCNF_XDG}" &&
-    ${dot_sshcnf_git} config core.filemode false &&
-    _echo "Git config: repo=${DOT_SSHCNF_PRJ} core.filemode=off." &&
-    :; )
+    ${dot_sshcnf_git} config --get core.filemode |
+    egrep -i '^false$' 1>/dev/null 2>&1 || {
+      ${dot_sshcnf_git} config core.filemode false &&
+      _echo "Git config: repo=${DOT_SSHCNF_PRJ} core.filemode=off."
+    }; )
 } || exit $?
 
 # $HOME/.ssh
