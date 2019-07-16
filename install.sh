@@ -117,13 +117,13 @@ trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
 trap "_cleanup" EXIT
 
 # ssh version
-_echo "SSH-Version: $(${dot_sshcnf_ssh} -V)"
+_echo "SSH-Version: $(${dot_sshcnf_ssh} -V 2>&1)"
 
 # Include ?
 _inc_directive=$(
   : && {
     "${dot_sshcnf_ssh}" -oInclude=/dev/null localhost 2>&1 |
-    egrep -i 'bad[ \t]+configuration[ \t]+option:[ \t]+include$'
+    egrep -i 'Bad[ \t]+configuration[ \t]+option:[ \t]+include'
   } 1>/dev/null 2>&1 && echo "0" || echo "1"; )
 
 # Include support ?
@@ -188,9 +188,12 @@ fi &&
 
     ent_name="${sshentry#*./}"
     fullpath="${DOT_SSHCNF_XDG}/ssh/${ent_name}"
-    
+
+    [ "${ent_name}" = "." ] &&
+    continue || :
+
     echo "${ent_name}" |
-    egrep "/.git" 1>/dev/null 2>&1 &&
+    egrep '(^|^.+/).git(/.+$|/$|$)' 1>/dev/null 2>&1 &&
     continue || :
 
     if [ -d "${fullpath}" ]
@@ -222,7 +225,7 @@ fi &&
 
       realpath=$(readlink "./${destname}" 2>/dev/null || :;)
 
-      if [ "${fullpath}" = "${realpath}" ]
+      if [ "${fullpath}" != "${realpath}" ]
       then
         printf "$THIS: Symlink '%s' to '%s' ... " "${fullpath}" "${destname}"
         : && {

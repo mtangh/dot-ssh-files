@@ -16,7 +16,10 @@ script:
 
   - |
     set -x;
-    ssh -V; ssh -oInclude=/dev/null localhost
+    ssh -V;
+    ssh -oInclude=/dev/null localhost 2>&1 |
+    egrep -i 'Bad[ \t]+configuration[ \t]+option:[ \t]+include' &&
+    echo OK || echo NG
     bash -n install.sh &&
     bash -x install.sh && {
       [ -r "$HOME/.ssh/config" ] &&
