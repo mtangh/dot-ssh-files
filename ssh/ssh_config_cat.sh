@@ -6,41 +6,140 @@ THIS="${THIS:-ssh_config_cat.sh}"
 BASE="${THIS%.*}"
 
 # Vars
+subcommand=""
 ssh_config=""
-ssh_cnfdir=""
+ssh_cnfdir="${HOME}/.ssh"
+
+# Output (for update)
+sahcat_out=""
+sshcatdiff=""
+
+# Temp dir.
+sc_tmp_dir="${TMPDIR:-/tmp}/.${BASE}.$$"
+sc_tmp_cfg=""
+sc_tmpdiff=""
 
 # Flags
+enable_inc=0
 rm_comment=0
 ignore_inc=0
+_dryrun_on=0
 _xtrace_on=0
+
+# Ssh
+sshcat_ssh="$(type -P ssh)"
+
+# Debug
+case "${DEBUG:-NO}" in
+0|[Nn][Oo]|[Oo][Ff][Ff])
+  ;;
+*)
+  _dryrun_on=1
+  _xtrace_on=1
+  ;;
+esac || :
+
+# Check
+[ -x "${sshcat_ssh}" ] || {
+  _echo "ERROR: ssh '${sshcat_ssh}': Command not found." 1>&2
+  exit 127
+}
+
+# Include ?
+enable_inc=$(
+  : && {
+    "${sshcat_ssh}" -oInclude=/dev/null localhost 2>&1 |
+    egrep -i 'Bad[ \t]+configuration[ \t]+option:[ \t]+include'
+  } 1>/dev/null 2>&1 && echo "0" || echo "1"; )
+
+# Include support ?
+if [ $enable_inc -eq 0 ]
+then
+  _echo "Your ssh does not support include directive." 1>&2
+fi
+
+# Echo
+_echo() {
+  echo "$THIS: $@"
+  return 0
+}
+
+# Abort
+_abort() {
+  local exitcode=1
+  case "$1" in
+  [0-9]|[1-9][0-9]|[1-9][0-9][0-9])
+    exitcode="$1"; shift ;;
+  *)
+    ;;
+  esac
+  _echo "ERROR: $@ (${exitcode:-1})" 1>&2
+  exit ${exitcode:-1}
+}
+
+# Cleanup
+_cleanup() {
+  [ -n "${ssh_cnftmp}" ] && {
+    rm -rf "${ssh_cnftmp}"
+  }  1>/dev/null 2>&1 || :
+  return 0
+}
+
+# Subcommand (First option)
+case "$1" in
+cat|check|update)
+  subcommand="$1"; shift
+  ;;
+up)
+  subcommand="update"; shift 
+  ;;
+*)
+  subcommand="cat"
+  ;;
+esac
 
 # Options
 while [ $# -gt 0 ]
 do
-  case "$1" in
-  -f*)
+  case "${subcommand}::${1}" in
+  *::-f*)
     if [ -n "${1##*-f}" ]
     then ssh_config="${1##*-f}"
     else ssh_config="${2}"; shift
     fi
     ;;
-  --remove-comment*)
+  cat::-remove-comment*)
     rm_comment=1
     ;;
-  --ignore-include*)
+  cat::-ignore-include*)
     ignore_inc=1
     ;;
-  -D*|-debug*|--debug*)
+  update::-o*)
+    if [ -n "${1##*-o}" ]
+    then sshcat_out="${1##*-o}"
+    else sshcat_out="${2}"; shift
+    fi
+    ;;
+  *::-D*|*::-debug*|*::--debug*)
     _xtrace_on=1
     ;;
-  -h|-help*|--help*)
+  *::-n*|*::-dry-run*|*::--dry-run*)
+    _dryrun_on=1
+    ;;
+  *::-h|*::-help*|*::--help*)
     cat <<_USAGE_
-Usage: $THIS [-f /path/to/ssh_config] [--remove-comment] [--ignore-include]
+Usage: $THIS [cat]  [-f /path/to/ssh_config] (-remove-comment] [-ignore-include]
+       $THIS update [-f /path/to/ssh_config] [-o /path/to/ssh_config.out]
+       $THIS check  [-f /path/to/ssh_config]
 
 _USAGE_
     exit 1
     ;;
+  *::-*)
+    _abort 22 "Illegal option '${1}'."
+    ;;
   *)
+    _abort 22 "Illegal argument '${1}'."
     ;;
   esac
   shift
@@ -56,69 +155,180 @@ set -Cu
   set -xv
 }
 
-# SSH config
+# SSH CONFIG (IN)
 [ -n "${ssh_config}" ] || {
-  ssh_config="${HOME}/.ssh/config"
+  if [ -r "${ssh_cnfdir}/config.tmpl" ]
+  then ssh_config="${ssh_cnfdir}/config.tmpl"
+  else ssh_config="${ssh_cnfdir}/config"
+  fi || :
 }
-[ -r "${ssh_config}" ] || {
-  cat <<_MSG_
-$THIS: ERROR: '${ssh_config}' no such file or directory.
-_MSG_
-  exit 1
-}
+if [ -r "${ssh_config}" ]
+then
+  # SSH Config Dir
+  ssh_cnfdir="${ssh_config%/*}"
+else
+  _abort 2 "'${ssh_config}' no such file or directory."
+fi
 
-# SSH Config Dir
-ssh_cnfdir="${ssh_config%/*}"
+# Subcommand check
+case "${subcommand}" in
+check)
+  # Option 'G' support ?
+  : && {
+    "${sshcat_ssh}" -G -F /dev/null localhost 2>&1 |
+    egrep -i '(unknown|illegal)[ \t]+option[ \t]+--[ \t]+G'
+  } 1>/dev/null 2>&1 && {
+    _abort 1 "option 'G' not supported."
+  } || :
+  ;;
+update)
+  # Support include directive, No update
+  [ $enable_inc -ne 0 ] && {
+    _echo "Your ssh supports include directives."
+    _echo "There is no need to update."
+    exit 0
+  } || :
+  # SSH CONFIG (OUT)
+  if [ -n "${sshcat_out}" ]
+  then
+    sshcat_out="$(
+      [ -n "${sshcat_out%/*}" ] && 
+      cd "${sshcat_out%/*}" 2>/dev/null
+      pwd)/${sshcat_out##*/}"
+  fi
+  if [ -z "${sshcat_out}" ]
+  then
+    sshcat_out="${ssh_cnfdir}/config"
+  fi
+  [ -n "${sshcat_out%/*}" -a -d "${sshcat_out%/*}" ] || {
+    _abort 2 "'${sshcat_out%/*}' no such file or directory."
+  }
+  ;;
+*)
+  ;;
+esac
+
+# Temp dir and file.
+[ -d "${sc_tmp_dir}" ] || {
+
+  mkdir -p "${sc_tmp_dir}" &&
+  chmod 0700 "${sc_tmp_dir}" &&
+  [ "${subcommand}" != "cat" -a $enable_inc -eq 0 ] && {
+    sc_tmp_cfg="${sc_tmp_dir}/${ssh_config##*/}.tmp"
+    touch "${sc_tmp_cfg}" || :
+  } || :
+
+} 1>/dev/null 2>&1
+
+# Set trap
+trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
+trap "_cleanup" EXIT
 
 # Print
-cat "${ssh_config}" |
-while read row_data
-do
+if [ "${subcommand}" = "cat" -o $enable_inc -eq 0 ]
+then
 
-  if [ $rm_comment -ne 0 ]
-  then
-    if [ -n "${row_data}" ]
-    then row_data=$(echo ${row_data%%#*})
+  cat "${ssh_config}" |
+  while read row_data
+  do
+
+    if [ $rm_comment -ne 0 ]
+    then
+      if [ -n "${row_data}" ]
+      then row_data=$(echo ${row_data%%#*})
+      fi
+      if [ -z "${row_data}" ]
+      then continue
+      fi
+    fi || :
+
+    printf "%s" "${row_data}" |
+    egrep -i '^[ \t]*include[ \t]+[^ \t].*$' 1>/dev/null 2>&1 || {
+      printf "%s" "${row_data}"; echo
+      continue
+    }
+
+    inc_file="${row_data%%#*}"
+    inc_file=$(
+      echo "${inc_file#*nclude}" |tr '\t' ' ' |
+      sed -e 's;  *; ;g' -e 's;^ *;;g' -e 's; *$;;' 2>/dev/null)
+
+    if [ $ignore_inc -eq 0 ]
+    then
+
+      echo "# <<< Include ${inc_file}"
+
+      ( if [ -n "${inc_file}" ]
+        then
+          if [ -n "${ssh_cnfdir}" ]
+          then cd "${ssh_cnfdir}" 2>/dev/null
+          else :
+          fi
+          cat ${inc_file}
+        else
+          echo "# ERROR: '${inc_file}': no such file or dir."
+        fi; )
+
+      echo "# >>> Include ${inc_file}"
+
+    else
+      echo "# <<< Include ${inc_file} >>>"
     fi
-    if [ -z "${row_data}" ]
-    then continue
-    fi
-  fi || :
 
-  printf "%s" "${row_data}" |
-  egrep -i '^[ \t]*include[ \t]+[^ \t].*$' 1>/dev/null 2>&1 || {
-    printf "%s" "${row_data}"; echo
-    continue
-  }
-
-  inc_file="${row_data%%#*}"
-  inc_file=$(
-    echo "${inc_file#*nclude}" |tr '\t' ' ' |
-    sed -e 's;  *; ;g' -e 's;^ *;;g' -e 's; *$;;' 2>/dev/null)
-
-  if [ $ignore_inc -eq 0 ]
-  then
-
-    echo "# <<< Include ${inc_file}"
-
-    ( if [ -n "${inc_file}" ]
-      then
-        if [ -n "${ssh_cnfdir}" ]
-        then cd "${ssh_cnfdir}" 2>/dev/null
-        else :
-        fi
-        cat ${inc_file}
-      else
-        echo "# ERROR: '${inc_file}': no such file or dir."
-      fi; )
-
-    echo "# >>> Include ${inc_file}"
-
-  else
-    echo "# <<< Include ${inc_file} >>>"
+  done |
+  if [ -n "${sc_tmp_cfg}" ]
+  then cat 1>|"${sc_tmp_cfg}"
+  else cat 
   fi
 
-done
+else : "noop"
+fi &&
+: "Check or Update" &&
+case "${subcommand}" in
+check)
+  : "Check" && {
+
+  sshcatopts="-Gv"
+  sshcatopts="${sshcatopts} -F $(
+    if [ -s "${sc_tmp_cfg}" ]
+    then echo "${sc_tmp_cfg}"
+    else echo "${ssh_config}"
+    fi 2>/dev/null; )"
+
+  # Check
+  "${sshcat_ssh}" ${sshcatopts} localhost &&
+  _echo "Syntax OK." ||
+  _echo "Syntax NG."
+
+  } ;;
+
+update)
+  : "Update" && {
+
+  if [ -s "${sc_tmp_cfg}" ]
+  then
+
+    sshcatdiff="${sshcat_out}-$(date +'%Y%m%dT%H%M%S').patch"
+    sc_tmpdiff="${sc_tmp_dir}/${ssh_config##*/}.diff"
+
+    diff -u "${sc_tmp_cfg}" "${sshcat_out}" 1>|"${sc_tmpdiff}" 2>/dev/null && {
+
+      cat "${sc_tmp_cfg}" 1>|"${sshcat_out}" && {
+        [ -s "${sshcat_out}" ] &&
+        cat "${sc_tmpdiff}" 1>|"${sshcatdiff}" || :
+      } && _echo "Update succeeded."
+
+    } 2>/dev/null || {
+      _echo "No difference, No update."; false
+    } 2>/dev/null
+
+  fi
+
+  } ;;
+
+*)
+  : "noop" ;;
+esac
 
 # End
-exit 0
+exit $?

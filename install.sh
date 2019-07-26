@@ -42,6 +42,16 @@ _inc_directive=0
 _x_dryrun_mode=0
 _xtrace_enable=0
 
+# Check
+[ -x "${dot_sshcnf_ssh}" ] || {
+  _echo "ERROR: ssh '${dot_sshcnf_ssh}': Command not found." 1>&2
+  exit 127
+}
+[ -x "${dot_sshcnf_git}" ] || {
+  _echo "ERROR: git '${dot_sshcnf_git}': Command not found." 1>&2
+  exit 127
+}
+
 # Debug
 case "${DEBUG:-NO}" in
 0|[Nn][Oo]|[Oo][Ff][Ff])
@@ -77,24 +87,13 @@ do
     _x_dryrun_mode=1
     ;;
   -*)
-    _echo "ERROR: Illegal option '${1}'." 1>&2
-    exit 1
+    _echo "ERROR: Illegal option '${1}'." 1>&2; exit 22
     ;;
   *)
     ;;
   esac
   shift
 done
-
-# Check
-[ -x "${dot_sshcnf_ssh}" ] || {
-  _echo "ERROR: ssh '${dot_sshcnf_ssh}': Command not found." 1>&2
-  exit 1
-}
-[ -x "${dot_sshcnf_git}" ] || {
-  _echo "ERROR: git '${dot_sshcnf_git}': Command not found." 1>&2
-  exit 1
-}
 
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
@@ -111,6 +110,12 @@ set -Cu
   DOT_SSH_XDGCNF="${DOT_SSHCNF_TMP}${DOT_SSH_XDGCNF}"
   DOT_SSHCNF_DIR="${DOT_SSHCNF_TMP}${DOT_SSHCNF_DIR}"
 }
+
+# Temp dir.
+[ -d "${DOT_SSHCNF_TMP}" ] || {
+  mkdir -p "${DOT_SSHCNF_TMP}" &&
+  chmod 0700 "${DOT_SSHCNT_TMP}"
+} 1>/dev/null 2>&1
 
 # Set trap
 trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
