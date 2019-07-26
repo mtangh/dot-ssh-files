@@ -45,11 +45,11 @@ _xtrace_enable=0
 # Check
 [ -x "${dot_sshcnf_ssh}" ] || {
   _echo "ERROR: ssh '${dot_sshcnf_ssh}': Command not found." 1>&2
-  exit 127
+  exit 1
 }
 [ -x "${dot_sshcnf_git}" ] || {
   _echo "ERROR: git '${dot_sshcnf_git}': Command not found." 1>&2
-  exit 127
+  exit 1
 }
 
 # Debug
