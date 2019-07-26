@@ -114,7 +114,7 @@ set -Cu
 # Temp dir.
 [ -d "${DOT_SSHCNF_TMP}" ] || {
   mkdir -p "${DOT_SSHCNF_TMP}" &&
-  chmod 0700 "${DOT_SSHCNT_TMP}"
+  chmod 0700 "${DOT_SSHCNF_TMP}" || :
 } 1>/dev/null 2>&1
 
 # Set trap
