@@ -23,6 +23,7 @@ sc_tmpdiff=""
 enable_inc=0
 rm_comment=0
 ignore_inc=0
+_force_upd=0
 _dryrun_on=0
 _xtrace_on=0
 
@@ -79,8 +80,8 @@ _abort() {
 
 # Cleanup
 _cleanup() {
-  [ -n "${ssh_cnftmp}" ] && {
-    rm -rf "${ssh_cnftmp}"
+  [ -n "${sc_tmp_dir}" ] && {
+    rm -rf "${sc_tmp_dir}"
   }  1>/dev/null 2>&1 || :
   return 0
 }
@@ -91,7 +92,7 @@ cat|check|update)
   subcommand="$1"; shift
   ;;
 up)
-  subcommand="update"; shift 
+  subcommand="update"; shift
   ;;
 *)
   subcommand="cat"
@@ -108,10 +109,10 @@ do
     else ssh_config="${2}"; shift
     fi
     ;;
-  cat::-remove-comment*)
+  cat::--remove-comment*)
     rm_comment=1
     ;;
-  cat::-ignore-include*)
+  cat::--ignore-include*)
     ignore_inc=1
     ;;
   update::-o*)
@@ -119,6 +120,9 @@ do
     then sshcat_out="${1##*-o}"
     else sshcat_out="${2}"; shift
     fi
+    ;;
+  update::--force)
+    _force_upd=1
     ;;
   *::-D*|*::-debug*|*::--debug*)
     _xtrace_on=1
@@ -128,8 +132,8 @@ do
     ;;
   *::-h|*::-help*|*::--help*)
     cat <<_USAGE_
-Usage: $THIS [cat]  [-f /path/to/ssh_config] (-remove-comment] [-ignore-include]
-       $THIS update [-f /path/to/ssh_config] [-o /path/to/ssh_config.out]
+Usage: $THIS [cat]  [-f /path/to/ssh_config] (--remove-comment] [--ignore-include]
+       $THIS update [-f /path/to/ssh_config] [-o /path/to/ssh_config.out] [--force]
        $THIS check  [-f /path/to/ssh_config]
 
 _USAGE_
@@ -183,7 +187,7 @@ check)
   ;;
 update)
   # Support include directive, No update
-  [ $enable_inc -ne 0 ] && {
+  [ $enable_inc -ne 0 -a $_force_upd -eq 0 ] && {
     _echo "Your ssh supports include directives."
     _echo "There is no need to update."
     exit 0
@@ -192,9 +196,8 @@ update)
   if [ -n "${sshcat_out}" ]
   then
     sshcat_out="$(
-      [ -n "${sshcat_out%/*}" ] && 
-      cd "${sshcat_out%/*}" 2>/dev/null
-      pwd)/${sshcat_out##*/}"
+      [ -n "${sshcat_out%/*}" -a "${sshcat_out%/*}" != "${sshcat_out}" ] &&
+      cd "${sshcat_out%/*}" 2>/dev/null; pwd)/${sshcat_out##*/}"
   fi
   if [ -z "${sshcat_out}" ]
   then
@@ -211,21 +214,23 @@ esac
 # Temp dir and file.
 [ -d "${sc_tmp_dir}" ] || {
 
-  mkdir -p "${sc_tmp_dir}" &&
-  chmod 0700 "${sc_tmp_dir}" &&
-  [ "${subcommand}" != "cat" -a $enable_inc -eq 0 ] && {
+  mkdir -p "${sc_tmp_dir}"  1>/dev/null 2>&1 &&
+  chmod 0700 "${sc_tmp_dir}"  1>/dev/null 2>&1 &&
+  if [ "${subcommand}" != "cat" -a $enable_inc -eq 0 ] || [ $_force_upd -ne 0 ]
+  then
     sc_tmp_cfg="${sc_tmp_dir}/${ssh_config##*/}.tmp"
-    touch "${sc_tmp_cfg}" || :
-  } || :
+    touch "${sc_tmp_cfg}" 1>/dev/null 2>&1 || :
+  else : "noop"
+  fi
 
-} 1>/dev/null 2>&1
+} 1>/dev/null
 
 # Set trap
 trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
 trap "_cleanup" EXIT
 
 # Print
-if [ "${subcommand}" = "cat" -o $enable_inc -eq 0 ]
+if [ "${subcommand}" = "cat" -o $enable_inc -eq 0 -o $_force_upd -ne 0 ]
 then
 
   cat "${ssh_config}" |
@@ -278,7 +283,7 @@ then
   done |
   if [ -n "${sc_tmp_cfg}" ]
   then cat 1>|"${sc_tmp_cfg}"
-  else cat 
+  else cat
   fi
 
 else : "noop"
@@ -288,41 +293,52 @@ case "${subcommand}" in
 check)
   : "Check" && {
 
-  sshcatopts="-Gv"
-  sshcatopts="${sshcatopts} -F $(
-    if [ -s "${sc_tmp_cfg}" ]
-    then echo "${sc_tmp_cfg}"
-    else echo "${ssh_config}"
-    fi 2>/dev/null; )"
+    sshcatopts="-Gv"
+    sshcatopts="${sshcatopts} -F $(
+      if [ -s "${sc_tmp_cfg}" ]
+      then echo "${sc_tmp_cfg}"
+      else echo "${ssh_config}"
+      fi 2>/dev/null; )"
 
-  # Check
-  "${sshcat_ssh}" ${sshcatopts} localhost &&
-  _echo "Syntax OK." ||
-  _echo "Syntax NG."
+    # Check
+    "${sshcat_ssh}" ${sshcatopts} localhost &&
+    _echo "Syntax OK." ||
+    _echo "Syntax NG."
 
   } ;;
 
 update)
   : "Update" && {
 
-  if [ -s "${sc_tmp_cfg}" ]
-  then
+    if [ -s "${sc_tmp_cfg}" ]
+    then
 
-    sshcatdiff="${sshcat_out}-$(date +'%Y%m%dT%H%M%S').patch"
-    sc_tmpdiff="${sc_tmp_dir}/${ssh_config##*/}.diff"
+      sshcatdiff="${sshcat_out}-$(date +'%Y%m%dT%H%M%S').patch"
+      sc_tmpdiff="${sc_tmp_dir}/${ssh_config##*/}.diff"
 
-    diff -u "${sc_tmp_cfg}" "${sshcat_out}" 1>|"${sc_tmpdiff}" 2>/dev/null && {
+      sc_diffret=0
 
-      cat "${sc_tmp_cfg}" 1>|"${sshcat_out}" && {
-        [ -s "${sshcat_out}" ] &&
-        cat "${sc_tmpdiff}" 1>|"${sshcatdiff}" || :
-      } && _echo "Update succeeded."
+      if [ $_force_upd -eq 0 ]
+      then
+        diff -u "${sc_tmp_cfg}" "${sshcat_out}" 1>|"${sc_tmpdiff}" 2>/dev/null
+        sc_diffret=$?
+      else
+        sc_diffret=1
+      fi
 
-    } 2>/dev/null || {
-      _echo "No difference, No update."; false
-    } 2>/dev/null
+      if [ ${sc_diffret} -ne 0 ]
+      then
 
-  fi
+        cat "${sc_tmp_cfg}" 1>|"${sshcat_out}" && {
+          [ -s "${sc_tmpdiff}" ] &&
+          cat "${sc_tmpdiff}" 1>|"${sshcatdiff}" || :
+        } && _echo "Update succeeded."
+
+      else
+        _echo "No difference, No update."; false
+      fi 2>/dev/null
+
+    fi
 
   } ;;
 
