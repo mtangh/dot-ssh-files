@@ -1,9 +1,7 @@
 #!/bin/bash
-THIS="${0##*/}"
-CDIR=$([ -n "${0%/*}" ] && cd "${0%/*}" 2>/dev/null; pwd)
-# Name
-THIS="${THIS:-ssh_config_update.sh}"
-BASE="${THIS%.*}"
+THIS="${BASH_SOURCE##*/}"
+NAME="${THIS%.*}"
+CDIR=$(cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
 # ssh_config_cat.sh
 [ -x "${CDIR}/ssh_config_cat.sh" ] || {
   echo "$THIS: ERROR: 'ssh_config_cat.sh': command not found." 1>&2

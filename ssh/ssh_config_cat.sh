@@ -1,9 +1,7 @@
 #!/bin/bash
-THIS="${0##*/}"
-CDIR=$([ -n "${0%/*}" ] && cd "${0%/*}" 2>/dev/null; pwd)
-# Name
-THIS="${THIS:-ssh_config_cat.sh}"
-BASE="${THIS%.*}"
+THIS="${BASH_SOURCE##*/}"
+NAME="${THIS%.*}"
+CDIR=$(cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
 
 # Vars
 subcommand=""
@@ -15,7 +13,7 @@ sahcat_out=""
 sshcatdiff=""
 
 # Temp dir.
-sc_tmp_dir="${TMPDIR:-/tmp}/.${BASE}.$$"
+sc_tmp_dir="${TMPDIR:-/tmp}/.${NAME}.$$"
 sc_tmp_cfg=""
 sc_tmpdiff=""
 
@@ -42,7 +40,7 @@ esac || :
 
 # Check
 [ -x "${sshcat_ssh}" ] || {
-  _echo "ERROR: ssh '${sshcat_ssh}': Command not found." 1>&2
+  echo "ERROR: ssh '${sshcat_ssh}': Command not found." 1>&2
   exit 127
 }
 
@@ -56,26 +54,26 @@ enable_inc=$(
 # Include support ?
 if [ $enable_inc -eq 0 ]
 then
-  _echo "Your ssh does not support include directive." 1>&2
+  echo "Your ssh does not support include directive." 1>&2
 fi
 
-# Echo
-_echo() {
-  echo "$THIS: $@"
+# Stdout
+_stdout() {
+  local row_data=""
+  cat | while IFS= read row_data
+  do printf "$THIS: %s" "${row_data}"; echo; done
   return 0
 }
 
 # Abort
 _abort() {
-  local exitcode=1
-  case "$1" in
-  [0-9]|[1-9][0-9]|[1-9][0-9][0-9])
-    exitcode="$1"; shift ;;
-  *)
-    ;;
-  esac
-  _echo "ERROR: $@ (${exitcode:-1})" 1>&2
-  exit ${exitcode:-1}
+  local exitcode=1 &>/dev/null
+  [[ ${1} =~ ^[0-9]+$ ]] && {
+    exitcode="$1"; shift;
+  } &>/dev/null
+  echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
+  [ ${exitcode:-1} -gt 0 ] || exit ${exitcode:-1}
+  return 0
 }
 
 # Cleanup
@@ -149,12 +147,15 @@ _USAGE_
   shift
 done
 
+# Redirect to filter
+exec 1> >(_stdout)
+
 # No unbound vars
 set -Cu
 
 # Enable trace, verbose
 [ $_xtrace_on -eq 0 ] || {
-  PS4='>(${BASH_SOURCE:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
+  PS4='>(${THIS:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
   export PS4
   set -xv
 }
@@ -171,7 +172,7 @@ then
   # SSH Config Dir
   ssh_cnfdir="${ssh_config%/*}"
 else
-  _abort 2 "'${ssh_config}' no such file or directory."
+  _abort 2 "'${ssh_config}': no such file or directory."
 fi
 
 # Subcommand check
@@ -188,8 +189,8 @@ check)
 update)
   # Support include directive, No update
   [ $enable_inc -ne 0 -a $_force_upd -eq 0 ] && {
-    _echo "Your ssh supports include directives."
-    _echo "There is no need to update."
+    echo "Your ssh supports include directives."
+    echo "There is no need to update."
     exit 0
   } || :
   # SSH CONFIG (OUT)
@@ -302,8 +303,8 @@ check)
 
     # Check
     "${sshcat_ssh}" ${sshcatopts} localhost &&
-    _echo "Syntax OK." ||
-    _echo "Syntax NG."
+    echo "Syntax OK." ||
+    echo "Syntax NG."
 
   } ;;
 
@@ -332,10 +333,10 @@ update)
         cat "${sc_tmp_cfg}" 1>|"${sshcat_out}" && {
           [ -s "${sc_tmpdiff}" ] &&
           cat "${sc_tmpdiff}" 1>|"${sshcatdiff}" || :
-        } && _echo "Update succeeded."
+        } && echo "Update succeeded."
 
       else
-        _echo "No difference, No update."; false
+        echo "No difference, No update."; false
       fi 2>/dev/null
 
     fi

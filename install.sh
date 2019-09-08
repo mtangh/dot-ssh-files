@@ -1,10 +1,7 @@
 #!/bin/bash
-THIS="${0##*/}"
-CDIR=$([ -n "${0%/*}" ] && cd "${0%/*}" 2>/dev/null; pwd)
-
-# Name
-THIS="${THIS:-install.sh}"
-BASE="${THIS%%.*}"
+THIS="${BASH_SOURCE##*/}"
+NAME="${THIS%.*}"
+CDIR=$(cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
 
 # Path
 PARH=/usr/bin:/bin; export PATH
@@ -29,7 +26,7 @@ DOT_SSHCNF_XDG="${DOT_SSHCNF_XDG:-$DOT_SSH_XDGCNF/$DOT_SSHCNF_PRJ}"
 DOT_SSHCNF_DIR="${DOT_SSHCNF_DIR:-$HOME/.ssh}"
 
 # Temp die
-DOT_SSHCNF_TMP="${TMPDIR:-/tmp}/.${BASE}.$$"
+DOT_SSHCNF_TMP="${TMPDIR:-/tmp}/.${DOT_SSHCNF_PRJ}.$$"
 
 # Ssh
 dot_sshcnf_ssh="$(type -P ssh)"
@@ -42,16 +39,6 @@ _inc_directive=0
 _x_dryrun_mode=0
 _xtrace_enable=0
 
-# Check
-[ -x "${dot_sshcnf_ssh}" ] || {
-  _echo "ERROR: ssh '${dot_sshcnf_ssh}': Command not found." 1>&2
-  exit 1
-}
-[ -x "${dot_sshcnf_git}" ] || {
-  _echo "ERROR: git '${dot_sshcnf_git}': Command not found." 1>&2
-  exit 1
-}
-
 # Debug
 case "${DEBUG:-NO}" in
 0|[Nn][Oo]|[Oo][Ff][Ff])
@@ -62,18 +49,39 @@ case "${DEBUG:-NO}" in
   ;;
 esac || :
 
-# Echo
-_echo() {
-  echo "$THIS: $@"
+# Stdout
+_stdout() {
+  local row_data=""
+  cat | while IFS= read row_data
+  do printf "$THIS: %s" "${row_data}"; echo; done
+  return 0
+}
+
+# Abort
+_abort() {
+  local exitcode=1 &>/dev/null
+  [[ ${1} =~ ^[0-9]+$ ]] && {
+    exitcode="$1"; shift;
+  } &>/dev/null
+  echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
+  [ ${exitcode:-1} -gt 0 ] || exit ${exitcode:-1}
   return 0
 }
 
 # Cleanup
 _cleanup() {
   [ -n "${DOT_SSHCNF_TMP}" ] && {
-    rm -rf "${DOT_SSHCNF_TMP}"
-  }  1>/dev/null 2>&1 || :
+    rm -rf "${DOT_SSHCNF_TMP}" 1>/dev/null 2>&1
+  } || :
   return 0
+}
+
+# Check
+[ -x "${dot_sshcnf_ssh}" ] || {
+  _abort 1 "ssh '${dot_sshcnf_ssh}': Command not found."
+}
+[ -x "${dot_sshcnf_git}" ] || {
+  _abort 1 "git '${dot_sshcnf_git}': Command not found."
 }
 
 # Parsing command line options
@@ -87,7 +95,7 @@ do
     _x_dryrun_mode=1
     ;;
   -*)
-    _echo "ERROR: Illegal option '${1}'." 1>&2; exit 22
+    _abort 22 "Illegal option '${1}'."
     ;;
   *)
     ;;
@@ -95,12 +103,15 @@ do
   shift
 done
 
+# Redirect to filter
+exec 1> >(_stdout)
+
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
 
 # Enable trace, verbose
 [ $_xtrace_enable -eq 0 ] || {
-  PS4='>(${BASH_SOURCE:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
+  PS4='>(${THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
   export PS4
   set -xv
 }
@@ -122,7 +133,7 @@ trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
 trap "_cleanup" EXIT
 
 # ssh version
-_echo "SSH-Version: $(${dot_sshcnf_ssh} -V 2>&1)"
+echo "SSH-Version: $(${dot_sshcnf_ssh} -V 2>&1)"
 
 # Include ?
 _inc_directive=$(
@@ -134,7 +145,7 @@ _inc_directive=$(
 # Include support ?
 if [ $_inc_directive -eq 0 ]
 then
-  _echo "Your ssh does not support include directive." 1>&2
+  echo "Your ssh does not support include directive." 1>&2
 fi
 
 # Checking install base
@@ -147,7 +158,7 @@ fi
 if [ ! -d "${DOT_SSHCNF_XDG}/.git" ]
 then
 
-  _echo "Git clone from '${DOT_SSHCNF_URL}'."
+  echo "Git clone from '${DOT_SSHCNF_URL}'."
 
   # Install
   ( [ -d "${DOT_SSHCNF_XDG}" ] && {
@@ -160,7 +171,7 @@ then
 
 else
 
-  _echo "Git pull from '${DOT_SSHCNF_URL}'."
+  echo "Git pull from '${DOT_SSHCNF_URL}'."
 
   # Update
   ( cd "${DOT_SSHCNF_XDG}" && {
@@ -174,7 +185,7 @@ fi &&
     ${dot_sshcnf_git} config --get core.filemode |
     egrep -i '^false$' 1>/dev/null 2>&1 || {
       ${dot_sshcnf_git} config core.filemode false &&
-      _echo "Git config: repo=${DOT_SSHCNF_PRJ} core.filemode=off."
+      echo "Git config: repo=${DOT_SSHCNF_PRJ} core.filemode=off."
     }; )
 } || exit $?
 
@@ -188,7 +199,7 @@ fi &&
 # Setup
 ( cd "${DOT_SSHCNF_DIR}" && {
 
-  _echo "Pwd '$(pwd)'."
+  echo "Pwd '$(pwd)'."
 
   for sshentry in $(cd "${DOT_SSHCNF_XDG}/ssh"; find . |sort)
   do
@@ -209,7 +220,7 @@ fi &&
       [ -d "./${ent_name}" ] || {
         mkdir -p "./${ent_name}" &&
         chmod 0700 "./${ent_name}" &&
-        _echo "Mkdir '${DOT_SSHCNF_DIR}/${ent_name}'." || :
+        echo "Mkdir '${DOT_SSHCNF_DIR}/${ent_name}'." || :
       } 2>/dev/null
 
     else
@@ -255,7 +266,7 @@ fi &&
 }; )
 
 # Finish installation
-_echo "Done."
+echo "Done."
 
 # End
 exit 0
