@@ -53,7 +53,7 @@ _abort() {
     exitcode="$1"; shift;
   } &>/dev/null
   echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
-  [ ${exitcode:-1} -gt 0 ] || exit ${exitcode:-1}
+  [ ${exitcode:-1} -le 0 ] || exit ${exitcode:-1}
   return 0
 }
 
