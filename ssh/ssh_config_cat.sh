@@ -38,25 +38,6 @@ case "${DEBUG:-NO}" in
   ;;
 esac || :
 
-# Check
-[ -x "${sshcat_ssh}" ] || {
-  echo "ERROR: ssh '${sshcat_ssh}': Command not found." 1>&2
-  exit 127
-}
-
-# Include ?
-enable_inc=$(
-  : && {
-    "${sshcat_ssh}" -oInclude=/dev/null localhost 2>&1 |
-    egrep -i 'Bad[ \t]+configuration[ \t]+option:[ \t]+include'
-  } 1>/dev/null 2>&1 && echo "0" || echo "1"; )
-
-# Include support ?
-if [ $enable_inc -eq 0 ]
-then
-  echo "Your ssh does not support include directive." 1>&2
-fi
-
 # Stdout
 _stdout() {
   local row_data=""
@@ -147,6 +128,24 @@ _USAGE_
   shift
 done
 
+# Check
+[ -x "${sshcat_ssh}" ] || {
+  _abort 127 "ssh '${sshcat_ssh}': Command not found."
+}
+
+# Include ?
+enable_inc=$(
+  : && {
+    "${sshcat_ssh}" -oInclude=/dev/null localhost 2>&1 |
+    egrep -i 'Bad[[:space:]]+configuration[[:space:]]+option:[[:space:]]+include'
+  } 1>/dev/null 2>&1 && echo "0" || echo "1"; )
+
+# Include support ?
+if [ $enable_inc -eq 0 ]
+then
+  _abort 0 "Your ssh does not support include directive."
+fi
+
 # No unbound vars
 set -Cu
 
@@ -178,7 +177,7 @@ check)
   # Option 'G' support ?
   : && {
     "${sshcat_ssh}" -G -F /dev/null localhost 2>&1 |
-    egrep -i '(unknown|illegal)[ \t]+option[ \t]+--[ \t]+G'
+    egrep -i '(unknown|illegal)[[:space:]]+option[[:space:]]+--[[:space:]]+G'
   } 1>/dev/null 2>&1 && {
     _abort 1 "option 'G' not supported."
   } || :
@@ -234,7 +233,7 @@ if [ "${subcommand}" = "cat" -o $enable_inc -eq 0 -o $_force_upd -ne 0 ]
 then
 
   cat "${ssh_config}" |
-  while IFS= read row_data
+  while IFS= read row_data 2>/dev/null
   do
 
     if [ $rm_comment -ne 0 ]
@@ -247,11 +246,13 @@ then
       fi
     fi || :
 
-    printf "%s" "${row_data}" |
-    egrep -i '^[ \t]*include[ \t]+[^ \t].*$' 1>/dev/null 2>&1 || {
-      printf "%s" "${row_data}"; echo
-      continue
-    }
+    : && {
+      printf "%b" "${row_data}" |
+      egrep -i '^[[:space:]]*include[[:space:]]+[^[:space:]].*$' 1>/dev/null 2>&1 || {
+        printf "%b" "${row_data}"; echo
+        continue
+      }
+    } 2>/dev/null
 
     inc_file="${row_data%%#*}"
     inc_file=$(

@@ -33,7 +33,7 @@ script:
     : "ssh_config_check.sh" && {
       bash -n "$HOME/.ssh/ssh_config_cat.sh" &&
       bash -x "$HOME/.ssh/ssh_config_cat.sh" |
-      egrep -i '^[ \t]*(LogLevel[ \t]VERBOSE|CheckHostIP[ \t]+no)[ \t]*$'
+      egrep -i '^[[:space:]]*(LogLevel[[:space:]]+VERBOSE|CheckHostIP[[:space:]]+no)[[:space:]]*$'
     } &&
     : "OK";
 
