@@ -147,9 +147,6 @@ _USAGE_
   shift
 done
 
-# Redirect to filter
-exec 1> >(_stdout)
-
 # No unbound vars
 set -Cu
 
@@ -189,8 +186,10 @@ check)
 update)
   # Support include directive, No update
   [ $enable_inc -ne 0 -a $_force_upd -eq 0 ] && {
-    echo "Your ssh supports include directives."
-    echo "There is no need to update."
+    : && {
+      echo "Your ssh supports include directives."
+      echo "There is no need to update."
+    } |_stdout
     exit 0
   } || :
   # SSH CONFIG (OUT)
@@ -235,7 +234,7 @@ if [ "${subcommand}" = "cat" -o $enable_inc -eq 0 -o $_force_upd -ne 0 ]
 then
 
   cat "${ssh_config}" |
-  while read row_data
+  while IFS= read row_data
   do
 
     if [ $rm_comment -ne 0 ]
@@ -294,6 +293,8 @@ case "${subcommand}" in
 check)
   : "Check" && {
 
+    exec 1> >(_stdout)
+
     sshcatopts="-Gv"
     sshcatopts="${sshcatopts} -F $(
       if [ -s "${sc_tmp_cfg}" ]
@@ -303,13 +304,15 @@ check)
 
     # Check
     "${sshcat_ssh}" ${sshcatopts} localhost &&
-    echo "Syntax OK." ||
-    echo "Syntax NG."
+    { echo "Syntax OK."; } ||
+    { echo "Syntax NG."; false; }
 
   } ;;
 
 update)
   : "Update" && {
+
+    exec 1> >(_stdout)
 
     if [ -s "${sc_tmp_cfg}" ]
     then
