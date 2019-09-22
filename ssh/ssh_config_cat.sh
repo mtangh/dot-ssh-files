@@ -1,7 +1,7 @@
 #!/bin/bash
 THIS="${BASH_SOURCE##*/}"
 NAME="${THIS%.*}"
-CDIR=$(cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
+CDIR=$([ -n "${BASH_SOURCE%/*}" ] && cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
 
 # Vars
 subcommand=""

@@ -1,9 +1,7 @@
 #!/bin/bash
-THIS="${0##*/}"
-CDIR=$([ -n "${0%/*}" ] && cd "${0%/*}" 2>/dev/null; pwd)
-# Name
-THIS="${THIS:-gitfilesupdate.sh}"
-BASE="${THIS%.*}"
+THIS="${BASH_SOURCE##*/}"
+NAME="${THIS%.*}"
+CDIR=$([ -n "${BASH_SOURCE%/*}" ] && cd "${BASH_SOURCE%/*}" 2>/dev/null; pwd)
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
 # Update Shell

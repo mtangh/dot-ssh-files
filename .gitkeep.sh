@@ -1,15 +1,13 @@
 #!/bin/bash
-THIS="${0##*/}"
-CDIR=$([ -n "${0%/*}" ] && cd "${0%/*}" 2>/dev/null; pwd)
-# Name
-THIS="${THIS:-gitkeep.sh}"
-BASE="${THIS%.*}"
+THIS="${BASH_SOURCE##*/}"
+NAME="${THIS%.*}"
+CDIR=$([ -n "${BASH_SOURCE%/*}" ] && cd "${BASH_SOURCE%/*}" 2>/dev/null; pwd)
 
 # Base directories.
-basedirs=""
+gkbasedirs=""
 
 # Tag file
-_tagname=".${BASE}"
+gk_tagname=".${NAME}"
 
 # Flags
 _rebuild=0
@@ -22,7 +20,7 @@ _debug_f=0
 # Usage
 usage() {
   local exitstat="${1:-1}"
-  cat <<_USAGE_
+  cat <<_USAGE_ 2/dev/null
 Usage: $THIS [OPTION] [dir...]
 
 OPTION:
@@ -40,22 +38,24 @@ _USAGE_
 # dir list
 _get_dir_list() {
   local _dirpath=""
-  printf "%b" "${basedirs}" |sort -u |egrep -v '^$' |
+  printf "%b" "${gkbasedirs}" 2>/dev/null |
+  sort -u 2>/dev/null |
   while read _dirpath
   do
+    [[ $_dirpath =~ ^$ ]] &&
     [[ $_dirpath =~ /$ ]] && {
       _dirpath="${_dirpath%/*}"
-    }
+    } 2>/dev/null || :
     echo "$_dirpath"
-  done
+  done || :
   return 0
 }
 
 # Echo
 _echo() {
   [ ${_quietly} -eq 0 ] && {
-    echo "${BASE}: $@"
-  } || :
+    echo "${NAME}: $@"
+  } 2>/dev/null || :
   return 0
 }
 
@@ -63,7 +63,7 @@ _echo() {
 _verbose() {
   [ ${_verbose} -ne 0 ] && {
     _echo "$@";
-  } || :
+  } 2>/dev/null || :
   return 0
 }
 
@@ -73,8 +73,8 @@ do
   case "$1" in
   -t*)
     if [ -n "${1#*-t}" ]
-    then _tagname="${1#*-t}"
-    else _tagname="$2"; shift
+    then gk_tagname="${1#*-t}"
+    else gk_tagname="$2"; shift
     fi
     ;;
   -R|--rebuild) _rebuild=1; _cleanup=1 ;;
@@ -89,10 +89,10 @@ do
     if [ -d "${1}" ]
     then
       # Base dir
-      basedirs="${basedirs}${1}\n"
+      gkbasedirs="${gkbasedirs}${1}\n"
     else
-      echo "${BASE}: no such directory '${1}'." 1>&2
-      exit 1
+      echo "${THIS}: '${1}': no such file or directory." 1>&2
+      exit 2
     fi
     ;;
   esac
@@ -111,43 +111,42 @@ set -Cu
 }
 
 # Set default '.' (if empty)
-basedirs="${basedirs:-.\n}"
+gkbasedirs="${gkbasedirs:-.\n}"
 
 # Tag name
-[ -n "${_tagname}" ] && {
-  _tagname=".${BASE}"
-} || :
-echo "${_tagname}" |
-egrep '^[.].+' 1>/dev/null 2>&1 || {
-  _tagname=".${_tagname}"
+[ -z "${gk_tagname}" ] || {
+  gk_tagname=".${NAME}"
+}
+[[ "${gk_tagname}" =~ ^[.].+ ]] &>/dev/null || {
+  gk_tagname=".${gk_tagname}"
 }
 
 # Work
-base_dir=""
-keep_dir=""
+gk_base_dir=""
+gk_keep_dir=""
 
 # Cleanup
 [ ${_cleanup} -ne 0 ] && {
 
-  findcmd=$(
+  _findcmd=$(
     [ $_dry_run -eq 0 ] && echo "rm -f"
     [ $_dry_run -eq 0 ] || echo "echo"; )
 
   # Remove gitkeep
   _get_dir_list |
-  while read base_dir
+  while read gk_base_dir
   do
     # Print
-    _echo "Cleanup: '$base_dir'."
-    # Find 'gitkeep' file under the base_dir and remove it.
-    find "${base_dir}" \
-      -name "${_tagname}" -a -type f \
-      -print -exec $findcmd {} \; |
-    while read printent
+    _echo "Cleanup: '$gk_base_dir'."
+    # Find 'gitkeep' file under the gk_base_dir and remove it.
+    find "${gk_base_dir}" \
+      -name "${gk_tagname}" -a -type f \
+      -print -exec ${_findcmd} {} \; 2>/dev/null |
+    while read _printent
     do
-      _verbose "Cleanup: '${printent}'."
-    done
-  done 2>/dev/null
+      _verbose "Cleanup: '${_printent}'."
+    done 2>/dev/null
+  done
   # Rebuild ?
   [ $_rebuild -eq 0 ] && {
     exit 0
@@ -157,42 +156,43 @@ keep_dir=""
 
 # Process dirs
 _get_dir_list |
-while read base_dir
+while read gk_base_dir
 do
 
-  _echo "Gitkeep directory '$base_dir'."
+  _echo "Gitkeep directory '${gk_base_dir}'."
 
-  find "$base_dir" -type d |sort -u |
-  while read keep_dir
+  find "$gk_base_dir" -type d 2>/dev/null |
+  sort -u 2>/dev/null |
+  while read gk_keep_dir
   do
 
-    _verbose "#1 Check dir '${keep_dir}'"
+    _verbose "#1 Check dir '${gk_keep_dir}'"
 
-    echo "${keep_dir}" |
-    egrep '^(/.+|\.+|(.*/){0,1}\.(git|svn|cvs|hg)(/.*){0,1})$' 1>&2 &&
+    [[ "${gk_keep_dir}" \
+       =~ ^(/.+|\.+|(.*/){0,1}\.(git|svn|cvs|hg)(/.*){0,1})$ ]] &&
+      continue || :
+
+    _verbose "#2 Dir '${gk_keep_dir}' have a child ?"
+
+    [[ $(ls -1A ${gk_keep_dir} |wc -l 2>/dev/null) =~ ^[\ \\t]*0$ ]] ||
       continue
 
-    _verbose "#2 Dir '${keep_dir}' have a child ?"
+    _verbose "#3 Dir '${gk_keep_dir}' is have not child."
 
-    echo $(ls -1A "${keep_dir}" |wc -l) |
-    egrep -v '^0$' 1>&2 &&
+    [ -e "${gk_keep_dir}/${gk_tagname}" ] &&
       continue
 
-    _verbose "#3 Dir '${keep_dir}' is have not child."
+    _verbose "#4 Dir '${gk_keep_dir}' is gitkeeping."
 
-    [ -e "${keep_dir}/${_tagname}" ] &&
-      continue
+    [ $_dry_run -eq 0 ] && {
+      touch "${gk_keep_dir}/${gk_tagname}"
+    } || :
 
-    _verbose "#4 Dir '${keep_dir}' is gitkeeping."
-
-    [ $_dry_run -eq 0 ] &&
-      touch "${keep_dir}/${_tagname}"
-
-    _echo "+ '${keep_dir}'"
+    _echo "+ '${gk_keep_dir}'"
 
   done
 
-done 2>/dev/null
+done
 
 # End
 exit 0
