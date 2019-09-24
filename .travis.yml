@@ -14,28 +14,7 @@ install: true
 # Run
 script:
 
-  - |
-    set -x; ssh -V;
-    : "install.sh" && {
-      bash -n install.sh &&
-      bash -x install.sh && {
-        [ -r "$HOME/.ssh/config" ] &&
-        [ -r "$HOME/.ssh/default.conf" ] &&
-        [ -d "$HOME/.ssh/config.d/" ] &&
-        [ -d "$HOME/.ssh/keys/" ] &&
-        [ -x "$HOME/.ssh/ssh_config_cat.sh" ] &&
-        [ -x "$HOME/.ssh/ssh_config_check.sh" ] &&
-        ( cd "${HOME}/.config/dot-ssh-files" &&
-          git config --get core.filemode |
-          egrep -i '^false$'; )
-      }
-    } &&
-    : "ssh_config_check.sh" && {
-      bash -n "$HOME/.ssh/ssh_config_cat.sh" &&
-      bash -x "$HOME/.ssh/ssh_config_cat.sh" |
-      egrep -i '^[[:space:]]*(LogLevel[[:space:]]+VERBOSE|CheckHostIP[[:space:]]+no)[[:space:]]*$'
-    } &&
-    : "OK";
+   - bash -Cu .tests.sh
 
 # Notifications
 #notifications:
