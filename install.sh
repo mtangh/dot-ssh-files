@@ -3,6 +3,10 @@ THIS="${BASH_SOURCE##*/}"
 NAME="${THIS%.*}"
 CDIR=$(cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
 
+# Name
+THIS="${THIS:-install.sh}"
+NAME="${THIS%.*}"
+
 # Path
 PARH=/usr/bin:/bin; export PATH
 
@@ -51,9 +55,15 @@ esac || :
 
 # Stdout
 _stdout() {
+  local rowlanel="${1:-$THIS}"
   local row_data=""
   cat | while IFS= read row_data
-  do printf "$THIS: %s" "${row_data}"; echo; done
+  do
+    if [[ "${row_data}" =~ ^${rowlanel}: ]]
+    then printf "%s" "${row_data}"
+    else printf "${rowlanel}: %s" "${row_data}"
+    fi; echo
+  done
   return 0
 }
 
@@ -104,7 +114,7 @@ do
 done
 
 # Redirect to filter
-exec 1> >(BASH_XTRACEFD=2 _stdout 2>/dev/null)
+exec 1> >(set +x; _stdout "${DOT_SSHCNF_PRJ}/${THIS}" 2>/dev/null)
 
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
