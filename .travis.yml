@@ -1,12 +1,7 @@
 ---
 # vim: set ff=unix ts=2 sw=2 sts=2 et : This line is VIM modeline
 
-language: minimal
-
-dist: xenial
-
-# Use the new container infrastructure
-sudo: false
+language: shell
 
 # Install packages
 install: true
