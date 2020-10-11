@@ -129,6 +129,7 @@ set -Cu
 # Dry run
 [ $_x_dryrun_mode -eq 0 ] || {
   DOT_SSH_XDGCNF="${DOT_SSHCNF_TMP}${DOT_SSH_XDGCNF}"
+  DOT_SSHCNF_XDG="${DOT_SSHCNF_TMP}${DOT_SSHCNF_XDG}"
   DOT_SSHCNF_DIR="${DOT_SSHCNF_TMP}${DOT_SSHCNF_DIR}"
 }
 
@@ -235,21 +236,23 @@ fi &&
 
     else
 
-      destname=$(
-        case "${ent_name}::${_inc_directive}" in
-        config::0)
-          echo "${ent_name}.tmpl" ;;
-        *)
-          echo "${ent_name}" ;;
-        esac 2>/dev/null; )
+      case "${ent_name}::${_inc_directive}" in
+      config::0)
+        destname="${ent_name}.tmpl"
+        ;;
+      *)
+        destname="${ent_name}"
+        ;;
+      esac 2>/dev/null
 
-      filemode=$(
-        case "${destname}" in
-        *.*sh)
-          echo 0755 ;;
-        *)
-          echo 0600 ;;
-        esac 2>/dev/null; )
+      case "${destname}" in
+      *.*sh)
+        filemode="0755"
+        ;;
+      *)
+        filemode="0600"
+        ;;
+      esac 2>/dev/null
 
       realpath=$(readlink "./${destname}" 2>/dev/null || :;)
 
