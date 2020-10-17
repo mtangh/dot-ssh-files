@@ -3,6 +3,9 @@ THIS="${BASH_SOURCE##*/}"
 NAME="${THIS%.*}"
 CDIR=$([ -n "${BASH_SOURCE%/*}" ] && cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
 
+# Prohibits overwriting by redirect and use of undefined variables.
+set -Cu
+
 # Vars
 subcommand=""
 ssh_config=""
@@ -49,8 +52,8 @@ _stdout() {
 # Abort
 _abort() {
   local exitcode=1 &>/dev/null
-  [[ ${1} =~ ^[0-9]+$ ]] && {
-    exitcode="$1"; shift;
+  [[ "${1:-}" =~ ^[0-9]+$ ]] && {
+    exitcode="${1}"; shift;
   } &>/dev/null
   echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
   [ ${exitcode:-1} -le 0 ] || exit ${exitcode:-1}
@@ -61,12 +64,12 @@ _abort() {
 _cleanup() {
   [ -n "${sc_tmp_dir}" ] && {
     rm -rf "${sc_tmp_dir}"
-  }  1>/dev/null 2>&1 || :
+  } &>/dev/null || :
   return 0
 }
 
 # Subcommand (First option)
-case "$1" in
+case "${1:-}" in
 cat|check|update)
   subcommand="$1"; shift
   ;;
@@ -81,11 +84,11 @@ esac
 # Options
 while [ $# -gt 0 ]
 do
-  case "${subcommand}::${1}" in
+  case "${subcommand}::${1:-}" in
   *::-f*)
     if [ -n "${1##*-f}" ]
     then ssh_config="${1##*-f}"
-    else ssh_config="${2}"; shift
+    else ssh_config="${2:-}"; shift
     fi
     ;;
   cat::--remove-comment*)
@@ -97,7 +100,7 @@ do
   update::-o*)
     if [ -n "${1##*-o}" ]
     then sshcat_out="${1##*-o}"
-    else sshcat_out="${2}"; shift
+    else sshcat_out="${2:-}"; shift
     fi
     ;;
   update::--force)
@@ -119,10 +122,10 @@ _USAGE_
     exit 1
     ;;
   *::-*)
-    _abort 22 "Illegal option '${1}'."
+    _abort 22 "Illegal option '${1:-}'."
     ;;
   *)
-    _abort 22 "Illegal argument '${1}'."
+    _abort 22 "Illegal argument '${1:-}'."
     ;;
   esac
   shift
@@ -138,19 +141,16 @@ enable_inc=$(
   : && {
     "${sshcat_ssh}" -oInclude=/dev/null localhost 2>&1 |
     egrep -i 'Bad[[:space:]]+configuration[[:space:]]+option:[[:space:]]+include'
-  } 1>/dev/null 2>&1 && echo "0" || echo "1"; )
+  } &>/dev/null && echo "0" || echo "1"; )
 
 # Include support ?
-if [ $enable_inc -eq 0 ]
+if [ ${enable_inc} -eq 0 ]
 then
   _abort 0 "Your ssh does not support include directive."
 fi
 
-# No unbound vars
-set -Cu
-
 # Enable trace, verbose
-[ $_xtrace_on -eq 0 ] || {
+[ ${_xtrace_on} -eq 0 ] || {
   PS4='>(${THIS:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
   export PS4
   set -xv
@@ -178,13 +178,13 @@ check)
   : && {
     "${sshcat_ssh}" -G -F /dev/null localhost 2>&1 |
     egrep -i '(unknown|illegal)[[:space:]]+option[[:space:]]+--[[:space:]]+G'
-  } 1>/dev/null 2>&1 && {
+  } &>/dev/null && {
     _abort 1 "option 'G' not supported."
   } || :
   ;;
 update)
   # Support include directive, No update
-  [ $enable_inc -ne 0 -a $_force_upd -eq 0 ] && {
+  [ ${enable_inc} -ne 0 -a ${_force_upd} -eq 0 ] && {
     : && {
       echo "Your ssh supports include directives."
       echo "There is no need to update."
@@ -213,12 +213,13 @@ esac
 # Temp dir and file.
 [ -d "${sc_tmp_dir}" ] || {
 
-  mkdir -p "${sc_tmp_dir}"  1>/dev/null 2>&1 &&
-  chmod 0700 "${sc_tmp_dir}"  1>/dev/null 2>&1 &&
-  if [ "${subcommand}" != "cat" -a $enable_inc -eq 0 ] || [ $_force_upd -ne 0 ]
+  mkdir -p "${sc_tmp_dir}" &>/dev/null &&
+  chmod 0700 "${sc_tmp_dir}" &>/dev/null &&
+  if [ "${subcommand}" != "cat" -a ${enable_inc} -eq 0 ] ||
+     [ ${_force_upd} -ne 0 ]
   then
     sc_tmp_cfg="${sc_tmp_dir}/${ssh_config##*/}.tmp"
-    touch "${sc_tmp_cfg}" 1>/dev/null 2>&1 || :
+    touch "${sc_tmp_cfg}" &>/dev/null || :
   else : "noop"
   fi
 
@@ -236,7 +237,7 @@ then
   while IFS= read row_data 2>/dev/null
   do
 
-    if [ $rm_comment -ne 0 ]
+    if [ ${rm_comment} -ne 0 ]
     then
       if [ -n "${row_data}" ]
       then row_data=$(echo ${row_data%%#*})
@@ -248,7 +249,7 @@ then
 
     : && {
       printf "%b" "${row_data}" |
-      egrep -i '^[[:space:]]*include[[:space:]]+[^[:space:]].*$' 1>/dev/null 2>&1 || {
+      egrep -i '^[[:space:]]*include[[:space:]]+[^[:space:]].*$' &>/dev/null || {
         printf "%b" "${row_data}"; echo
         continue
       }
@@ -262,7 +263,7 @@ then
     if [ $ignore_inc -eq 0 ]
     then
 
-      echo "# <<< Include ${inc_file}"
+      echo "# {{{ Include ${inc_file}"
 
       ( if [ -n "${inc_file}" ]
         then
@@ -275,10 +276,10 @@ then
           echo "# ERROR: '${inc_file}': no such file or dir."
         fi; )
 
-      echo "# >>> Include ${inc_file}"
+      echo "# }}} Include ${inc_file}"
 
     else
-      echo "# <<< Include ${inc_file} >>>"
+      echo "# {{{ Include ${inc_file} }}}"
     fi
 
   done |
@@ -294,7 +295,7 @@ case "${subcommand}" in
 check)
   : "Check" && {
 
-    exec 1> >(_stdout)
+    exec 1>| >(_stdout)
 
     sshcatopts="-Gv"
     sshcatopts="${sshcatopts} -F $(
@@ -313,7 +314,7 @@ check)
 update)
   : "Update" && {
 
-    exec 1> >(_stdout)
+    exec 1>| >(_stdout)
 
     if [ -s "${sc_tmp_cfg}" ]
     then
@@ -323,7 +324,7 @@ update)
 
       sc_diffret=0
 
-      if [ $_force_upd -eq 0 ]
+      if [ ${_force_upd} -eq 0 ]
       then
         diff -u "${sc_tmp_cfg}" "${sshcat_out}" 1>|"${sc_tmpdiff}" 2>/dev/null
         sc_diffret=$?

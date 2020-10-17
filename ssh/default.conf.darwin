@@ -1,4 +1,5 @@
 # default.conf.darwin
+# vim: set ff=unix ts=2 sw=2 sts=2 et : This line is VIM modeline
 
 Host *
 
@@ -50,7 +51,7 @@ Host *
 # Added by Krypton
 	# PKCS11Provider:
 	# Specifies which PKCS#11 provider to use. The argument to this
-	# keyword is the PKCS#11 shared library ssh(1) should use to 
+	# keyword is the PKCS#11 shared library ssh(1) should use to
 	# communicate with a PKCS#11 token providing the user's private RSA
 	# key.
 	#PKCS11Provider /usr/local/lib/kr-pkcs11.so

@@ -1,4 +1,5 @@
-# $OpenBSD: ssh_config,v 1.33 2017/05/07 23:12:57 djm Exp $
+# ssh_config
+# vim: set ff=unix ts=2 sw=2 sts=2 et : This line is VIM modeline
 #
 # This is the ssh client system-wide configuration file. See
 # ssh_config(5) for more information. This file provides defaults for
@@ -258,20 +259,20 @@ Host *
 	# minutes has elapsed.
 	ForwardX11Timeout 15m
 
-	# IdentityFile:
-	# Specifies a file from which the user's DSA, ECDSA, Ed25519 or RSA
-	# authentication identity is read. The default is ~/.ssh/id_dsa,
-	# ~/.ssh/id_ecdsa, ~/.ssh/id_ed25519 and ~/.ssh/id_rsa.
-	# Additionally, any identities represented by the authentication
-	# agent will be used for authentication unless IdentitiesOnly is set.
-	# If no certificates have been explicitly specified by CertificateFile,
-	# ssh(1) will try to load certificate information from the filename
-	# obtained by appending -cert.pub to the path of a specified
-	# IdentityFile.
-	IdentityFile ~/.ssh/id_ed25519
-	IdentityFile ~/.ssh/id_rsa
-	IdentityFile ~/.ssh/id_ecdsa
-	IdentityFile ~/.ssh/id_dsa
+	## IdentityFile:
+	## Specifies a file from which the user's DSA, ECDSA, Ed25519 or RSA
+	## authentication identity is read. The default is ~/.ssh/id_dsa,
+	## ~/.ssh/id_ecdsa, ~/.ssh/id_ed25519 and ~/.ssh/id_rsa.
+	## Additionally, any identities represented by the authentication
+	## agent will be used for authentication unless IdentitiesOnly is set.
+	## If no certificates have been explicitly specified by CertificateFile,
+	## ssh(1) will try to load certificate information from the filename
+	## obtained by appending -cert.pub to the path of a specified
+	## IdentityFile.
+	#IdentityFile ~/.ssh/id_ed25519
+	#IdentityFile ~/.ssh/id_rsa
+	#IdentityFile ~/.ssh/id_ecdsa
+	#IdentityFile ~/.ssh/id_dsa
 
 	# IdentitiesOnly:
 	# Specifies that ssh(1) should only use the authentication identity

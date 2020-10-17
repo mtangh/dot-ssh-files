@@ -10,6 +10,10 @@ echo "[${tests_name}] install.sh" && {
     [ -r "$HOME/.ssh/config" ] &&
     [ -r "$HOME/.ssh/default.conf" ] &&
     [ -d "$HOME/.ssh/config.d/" ] &&
+    [ -f "$HOME/.ssh/config.d/00_localhost.conf" ] &&
+    [ -f "$HOME/.ssh/config.d/02_localnetwork-classA.conf" ] &&
+    [ -f "$HOME/.ssh/config.d/02_localnetwork-classB.conf" ] &&
+    [ -f "$HOME/.ssh/config.d/02_localnetwork-classC.conf" ] &&
     [ -d "$HOME/.ssh/keys/" ] &&
     [ -x "$HOME/.ssh/ssh_config_cat.sh" ] &&
     [ -x "$HOME/.ssh/ssh_config_check.sh" ] &&
