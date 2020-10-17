@@ -297,13 +297,13 @@ Host *
 	# GlobalKnownHostsFile:
 	# Specifies one or more files to use for the global host key
 	# database, separated by whitespace.
-	#GlobalKnownHostsFile /etc/ssh/ssh_known_hosts, /etc/ssh/ssh_known_hosts2
+	#GlobalKnownHostsFile /etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts2
 
 	# UserKnownHostsFile:
 	# Specifies one or more files to use for the user host key
 	# database, separated by whitespace. The default is
 	# ~/.ssh/known_hosts, ~/.ssh/known_hosts2.
-	UserKnownHostsFile ~/.ssh/known_hosts, ~/.ssh/known_hosts2
+	UserKnownHostsFile ~/.ssh/known_hosts ~/.ssh/known_hosts2
 
 	# NoHostAuthenticationForLocalhost:
 	# Disable host authentication for localhost (loopback addresses).
