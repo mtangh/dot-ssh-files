@@ -71,7 +71,7 @@ _cleanup() {
 # Subcommand (First option)
 case "${1:-}" in
 cat|check|update)
-  subcommand="$1"; shift
+  subcommand="${1:-}"; shift
   ;;
 up)
   subcommand="update"; shift
@@ -86,8 +86,8 @@ while [ $# -gt 0 ]
 do
   case "${subcommand}::${1:-}" in
   *::-f*)
-    if [ -n "${1##*-f}" ]
-    then ssh_config="${1##*-f}"
+    if [ -n "${1#-f}" ]
+    then ssh_config="${1#-f}"
     else ssh_config="${2:-}"; shift
     fi
     ;;
@@ -98,8 +98,8 @@ do
     ignore_inc=1
     ;;
   update::-o*)
-    if [ -n "${1##*-o}" ]
-    then sshcat_out="${1##*-o}"
+    if [ -n "${1#-o}" ]
+    then sshcat_out="${1#-o}"
     else sshcat_out="${2:-}"; shift
     fi
     ;;
@@ -230,7 +230,7 @@ trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
 trap "_cleanup" EXIT
 
 # Print
-if [ "${subcommand}" = "cat" -o $enable_inc -eq 0 -o $_force_upd -ne 0 ]
+if [ "${subcommand}" = "cat" -o ${enable_inc} -eq 0 -o ${_force_upd} -ne 0 ]
 then
 
   cat "${ssh_config}" |
