@@ -246,7 +246,7 @@ fi &&
     continue || :
 
     echo "${ent_name}" |
-    egrep '(^|^.+/).git(/.+$|/$|$)' &>/dev/null &&
+    egrep '(^|^.+/).git.*$' &>/dev/null &&
     continue || :
 
     if [ -d "${fullpath}" ]
@@ -302,7 +302,7 @@ fi &&
       echo "OK." || echo "NG."
 
     elif [ ${use_link} -eq 0 ] &&
-         diff "${fullpath}" "./${destname}" &>/dev/null
+         ! diff "${fullpath}" "./${destname}" &>/dev/null
     then
 
       printf "${THIS}: Copy '%s' to '%s' ... " "${fullpath}" "${destname}" && {
