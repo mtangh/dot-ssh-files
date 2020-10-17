@@ -227,7 +227,8 @@ fi &&
 # Setup
 ( cd "${DOT_SSHCNF_DIR}" && {
 
-  echo "Pwd '$(pwd)'."
+  echo "OS-Type: [${DOT_SSHCONF_OS}]"
+  echo "Pwd: [$(pwd)]"
 
   for sshentry in $(
     cd "${DOT_SSHCNF_XDG}/ssh" && {
@@ -281,7 +282,7 @@ fi &&
     *)
       filemode="0644"
       ;;
-    esac 2>/dev/null
+    esac
 
     if [ ! -e "./${destname}" -a -e "./${destname}.off" ]
     then
