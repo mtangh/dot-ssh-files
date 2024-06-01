@@ -128,10 +128,10 @@ Include config.d/??_*.conf
 ##- Default
 ##-
 
-Host *
+# Include default
+Include default.conf
 
-	# Include default
-	Include default.conf
+Host *
 
 	# Protocol:
 	# Specifies the protocol versions ssh(1) should support in order of
@@ -387,13 +387,13 @@ Host *
 	# on a control socket specified using the ControlPath argument.
 	# Additional sessions can connect to this socket using the same
 	# ControlPath with ControlMaster set to no (the default).
-	ControlMaster auto
+#	ControlMaster auto
 
 	# ControlPath:
 	# Specify the path to the control socket used for connection sharing
 	# as described in the ControlMaster section above or the string none
 	# to disable connection sharing.
-	ControlPath none
+#	ControlPath none
 
 	# ControlPersist:
 	# When used in conjunction with ControlMaster, specifies that the
@@ -408,7 +408,7 @@ Host *
 	# documented in sshd_config(5), then the backgrounded master
 	# connection will automatically terminate after it has remained
 	# idle (with no client connections) for the specified time.
-	ControlPersist 10s
+#	ControlPersist 10s
 
 	# Compression:
 	# Specifies whether to use compression. The argument must be ''yes''
