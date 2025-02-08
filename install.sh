@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034,SC2120,SC2124,SC2128,SC2166
 [ -n "$BASH" ] 1>/dev/null 2>&1 || {
 echo "Run it in bash." 1>&2; exit 1; }
 THIS="${BASH_SOURCE}"
