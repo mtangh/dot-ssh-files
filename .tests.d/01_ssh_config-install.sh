@@ -19,7 +19,7 @@ echo "[${tests_name}] install.sh" && {
     [ -x "$HOME/.ssh/ssh_config_check.sh" ] &&
     ( cd "${HOME}/.config/dot-ssh-files" &&
       git config --get core.filemode |
-      egrep -i '^false$'; )
+      grep -Ei '^false$'; )
   }
 
 } &&

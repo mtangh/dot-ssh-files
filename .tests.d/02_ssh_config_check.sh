@@ -7,7 +7,7 @@ echo "[${tests_name}] ssh_config_check.sh" && {
 
   bash -n "$HOME/.ssh/ssh_config_cat.sh" &&
   bash -x "$HOME/.ssh/ssh_config_cat.sh" |
-  egrep -i '^[[:space:]]*(LogLevel[[:space:]]+VERBOSE|CheckHostIP[[:space:]]+no)[[:space:]]*$'
+  grep -Ei '^[[:space:]]*(LogLevel[[:space:]]+VERBOSE|CheckHostIP[[:space:]]+no)[[:space:]]*$'
 
 } &&
 echo "[${tests_name}] DONE."

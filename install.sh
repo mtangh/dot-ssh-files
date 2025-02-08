@@ -3,12 +3,14 @@
 echo "Run it in bash." 1>&2; exit 1; }
 THIS="${BASH_SOURCE}"
 NAME="${THIS##*/}"
-CDIR=$([ -n "${THIS%/*}" ] && cd "${THIS%/*}" &>/dev/null; pwd)
-# Name
 NAME="${NAME:-install.sh}"
 BASE="${NAME%.*}"
+CDIR=$([ -n "${THIS%/*}" ] && cd "${THIS%/*}" &>/dev/null || :; pwd)
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
+# The return value of a pipeline is the value of the last command to
+# exit with a non-zero status.
+set -o pipefail
 # Case insensitive regular expressions.
 shopt -s nocasematch
 # Path
@@ -71,25 +73,25 @@ esac || :
 _stdout() {
   local ltag="${1:-$NAME}"
   local line=""
-  cat - | while IFS= read line
+  cat - | while IFS= read -r line
   do
     [[ "${line}" =~ ^${ltag}: ]] ||
-    printf "${ltag}: "; echo "${line}"
+    printf "%s: " "${ltag}"; echo "${line}"
   done
   return 0
 }
 # Function: Echo
 _echo() {
   echo "$@" |_stdout
-  return 0
 }
 # Function: Abort
 _abort() {
   local exitcode=1 &>/dev/null
+  local messages="$@"
   [[ ${1:-} =~ ^[0-9]+$ ]] && {
     exitcode="${1}"; shift;
   } &>/dev/null
-  echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
+  echo "ERROR: ${messages} (${exitcode:-1})" |_stdout 1>&2
   [ ${exitcode:-1} -le 0 ] || exit ${exitcode:-1}
   return 0
 }
@@ -147,7 +149,7 @@ _echo "SSH-Version: $(${dot_sshcnf_ssh} -V 2>&1)"
 _inc_directive=$(
   : && {
     "${dot_sshcnf_ssh}" -oInclude=/dev/null localhost 2>&1 |
-    egrep -i 'Bad[ \t]+configuration[ \t]+option:[ \t]+include'
+    grep -Ei 'Bad[ \t]+configuration[ \t]+option:[ \t]+include'
   } &>/dev/null && echo "0" || echo "1"; )
 # Include support ?
 if [ ${_inc_directive} -eq 0 ]
@@ -182,7 +184,7 @@ fi &&
 [ -d "${DOTSSHCNFXDG}" ] && {
   ( cd "${DOTSSHCNFXDG}" &&
     ${dot_sshcnf_git} config --get core.filemode |
-    egrep -i '^false$' &>/dev/null || {
+    grep -Ei '^false$' &>/dev/null || {
       ${dot_sshcnf_git} config core.filemode false &&
       _echo "Git config: repo=${GIT_PROJNAME} core.filemode=off."
     }; )
@@ -216,7 +218,7 @@ fi &&
     continue || :
 
     echo "${ent_name}" |
-    egrep '(^|^.+/).git.*$' &>/dev/null &&
+    grep -Ei '(^|^.+/).git.*$' &>/dev/null &&
     continue || :
 
     if [ -d "${fullpath}" ]

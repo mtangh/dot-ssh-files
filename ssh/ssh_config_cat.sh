@@ -1,20 +1,21 @@
 #!/bin/bash
-[ "$0" = "$BASH_SOURCE" ] &>/dev/null || {
-echo "Run it directly" 1>&2; exit 1; }
+[ "$0" = "$BASH_SOURCE" ] 1>/dev/null 2>&1 || {
+echo "Run it directory." 1>&2; exit 1; }
 THIS="${BASH_SOURCE}"
 NAME="${THIS##*/}"
-CDIR=$([ -n "${THIS%/*}" ] && cd "${THIS%/*}" &>/dev/null; pwd)
-# Name
-NAME="${NAME:-ssh_config_cat.sh}"
 BASE="${NAME%.*}"
+CDIR=$([ -n "${THIS%/*}" ] && cd "${THIS%/*}" &>/dev/null || :; pwd)
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
+# The return value of a pipeline is the value of the last command to
+# exit with a non-zero status.
+set -o pipefail
 # Vars
 subcommand=""
 ssh_config=""
 ssh_cnfdir="${HOME}/.ssh"
 # Output (for update)
-sahcat_out=""
+sshcat_out=""
 sshcatdiff=""
 # Temp dir.
 sc_tmp_dir="${TMPDIR:-/tmp}/.${NAME}.$$"
@@ -42,20 +43,25 @@ esac || :
 _stdout() {
   local ltag="${1:-$NAME}"
   local line=""
-  cat - | while IFS= read line
+  cat - | while IFS= read -r line
   do
     [[ "${line}" =~ ^${ltag}: ]] ||
-    printf "${ltag}: "; echo "${line}"
+    printf "%s: " "${ltag}"; echo "${line}"
   done
   return 0
+}
+# Function: Echo
+_echo() {
+  echo "$@" |_stdout
 }
 # Function: Abort
 _abort() {
   local exitcode=1 &>/dev/null
+  local messages="$@"
   [[ ${1:-} =~ ^[0-9]+$ ]] && {
     exitcode="${1}"; shift;
   } &>/dev/null
-  echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
+  echo "ERROR: ${messages} (${exitcode:-1})" |_stdout 1>&2
   [ ${exitcode:-1} -le 0 ] || exit ${exitcode:-1}
   return 0
 }
@@ -135,10 +141,10 @@ done
 enable_inc=$(
   : && {
     "${sshcat_ssh}" -oInclude=/dev/null localhost 2>&1 |
-    egrep -i 'Bad[[:space:]]+configuration[[:space:]]+option:[[:space:]]+include'
-  } &>/dev/null && echo "0" || echo "1"; )
+    grep -Ei 'Bad[[:space:]]+configuration[[:space:]]+option:[[:space:]]+include'
+  } &>/dev/null && echo 0 || echo 1; )
 # Include support ?
-if [ ${enable_inc:-0} -eq 0 ]
+if [ ${enable_inc:=0} -eq 0 ]
 then
   _abort 0 "Your ssh does not support include directive."
 fi
@@ -168,7 +174,7 @@ check)
   # Option 'G' support ?
   : && {
     "${sshcat_ssh}" -G -F /dev/null localhost 2>&1 |
-    egrep -i '(unknown|illegal)[[:space:]]+option[[:space:]]+--[[:space:]]+G'
+    grep -Ei '(unknown|illegal)[[:space:]]+option[[:space:]]+--[[:space:]]+G'
   } &>/dev/null && {
     _abort 1 "option 'G' not supported."
   } || :
@@ -187,7 +193,7 @@ update)
   then
     sshcat_out="$(
       [ -n "${sshcat_out%/*}" -a "${sshcat_out%/*}" != "${sshcat_out}" ] &&
-      cd "${sshcat_out%/*}" 2>/dev/null; pwd)/${sshcat_out##*/}"
+      cd "${sshcat_out%/*}" &>/dev/null || :; pwd)/${sshcat_out##*/}"
   fi
   if [ -z "${sshcat_out}" ]
   then
@@ -239,7 +245,7 @@ then
 
     : && {
       printf "%b" "${row_data}" |
-      egrep -i '^[[:space:]]*include[[:space:]]+[^[:space:]].*$' &>/dev/null || {
+      grep -Ei '^[[:space:]]*include[[:space:]]+[^[:space:]].*$' &>/dev/null || {
         printf "%b" "${row_data}"; echo
         continue
       }
