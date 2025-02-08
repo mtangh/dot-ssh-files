@@ -1,70 +1,63 @@
 #!/bin/bash
-THIS="${BASH_SOURCE##*/}"
-NAME="${THIS%.*}"
-CDIR=$(cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
-
+[ -n "$BASH" ] 1>/dev/null 2>&1 || {
+echo "Run it in bash." 1>&2; exit 1; }
+THIS="${BASH_SOURCE}"
+NAME="${THIS##*/}"
+CDIR=$([ -n "${THIS%/*}" ] && cd "${THIS%/*}" &>/dev/null; pwd)
+# Name
+NAME="${NAME:-install.sh}"
+BASE="${NAME%.*}"
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
-
+# Case insensitive regular expressions.
+shopt -s nocasematch
 # Path
-PARH=/usr/bin:/bin; export PATH
-
-# Platform
-DOT_SSHCONF_OS="${OSTYPE:-}"
-
+PATH=/usr/bin:/usr/sbin:/bin:/sbin; export PATH
 # dot-ssh-files URL
-DOT_SSHCNF_URL="${DOT_SSHCNF_URL:-https://github.com/mtangh/dot-ssh-files.git}"
-
+GIT_PROJ_URL="${GIT_PROJ_URL:-https://github.com/mtangh/dot-ssh-files.git}"
 # dot-ssh-files name
-DOT_SSHCNF_PRJ="${DOT_SSHCNF_URL##*/}"
-DOT_SSHCNF_PRJ="${DOT_SSHCNF_PRJ%.git*}"
-
-# XDG Config Dir
-DOT_SSH_XDGCNF="${XDG_CONFIG_HOME:-$HOME/.config}"
-
-# Install Dir
-DOT_SSHCNF_XDG="${DOT_SSHCNF_XDG:-$DOT_SSH_XDGCNF/$DOT_SSHCNF_PRJ}"
-
+GIT_PROJNAME="${GIT_PROJ_URL##*/}"
+GIT_PROJNAME="${GIT_PROJNAME%.git*}"
 # SSH Config Dir
-DOT_SSHCNF_DIR="${DOT_SSHCNF_DIR:-$HOME/.ssh}"
-
+DOTSSHCNFDIR="${DOTSSHCNFDIR:-$HOME/.ssh}"
+# Platform
+DOTSSHCNF_OS="${OSTYPE:-}"
+# XDG Config Dir
+DOTSSHXDGCNF="${XDG_CONFIG_HOME:-$HOME/.config}"
+# Install Dir
+DOTSSHCNFXDG="${DOTSSHCNFXDG:-$DOTSSHXDGCNF/$GIT_PROJNAME}"
 # Temp die
-DOT_SSHCNF_TMP="${TMPDIR:-/tmp}/.${DOT_SSHCNF_PRJ}.$$"
-
+DOTSSHCNFTMP="${TMPDIR:-/tmp}/.${GIT_PROJNAME}.$$"
 # Ssh
 dot_sshcnf_ssh="$(type -P ssh)"
-
 # Git
 dot_sshcnf_git="$(type -P git)"
-
 # Flags
 _inc_directive=0
 _x_dryrun_mode=0
 _xtrace_enable=0
-
 # OS
-[ -z "${DOT_SSHCONF_OS:-}" ] && {
-  DOT_SSHCONF_OS=$(uname -s)
+[ -z "${DOTSSHCNF_OS:-}" ] && {
+  DOTSSHCNF_OS=$(uname -s)
 } || :
-case "${DOT_SSHCONF_OS:-}" in
+case "${DOTSSHCNF_OS:-}" in
 darwin*)
-  DOT_SSHCONF_OS=$(
+  DOTSSHCNF_OS=$(
     if [ -x "/usr/bin/sw_vers" ]
-    then DOT_SSHCONF_OS=$(/usr/bin/sw_vers -productName)
-    else DOT_SSHCONF_OS="darwin"
+    then DOTSSHCNF_OS=$(/usr/bin/sw_vers -productName)
+    else DOTSSHCNF_OS="darwin"
     fi || :
-    echo "${DOT_SSHCONF_OS// /}"; )
+    echo "${DOTSSHCNF_OS// /}"; )
     ;;
 *-*)
-  DOT_SSHCONF_OS="${DOT_SSHCONF_OS%%-*}"
+  DOTSSHCNF_OS="${DOTSSHCNF_OS%%-*}"
   ;;
 esac
-[ -n "${DOT_SSHCONF_OS:-}" ] && {
-  DOT_SSHCONF_OS=$(
-    echo "${DOT_SSHCONF_OS}"|
+[ -n "${DOTSSHCNF_OS:-}" ] && {
+  DOTSSHCNF_OS=$(
+    echo "${DOTSSHCNF_OS}"|
     tr '[:upper:]' '[:lower:]'; )
 } || :
-
 # Debug
 case "${DEBUG:-NO}" in
 0|[Nn][Oo]|[Oo][Ff][Ff])
@@ -74,46 +67,44 @@ case "${DEBUG:-NO}" in
   _xtrace_enable=1
   ;;
 esac || :
-
-# Stdout
+# Function: Stdout
 _stdout() {
-  local rowlanel="${1:-$THIS}"
-  local row_data=""
-  cat | while IFS= read row_data
+  local ltag="${1:-$NAME}"
+  local line=""
+  cat - | while IFS= read line
   do
-    if [[ "${row_data}" =~ ^${rowlanel}: ]]
-    then printf "%s" "${row_data}"
-    else printf "${rowlanel}: %s" "${row_data}"
-    fi; echo
+    [[ "${line}" =~ ^${ltag}: ]] ||
+    printf "${ltag}: "; echo "${line}"
   done
   return 0
 }
-
-# Abort
+# Function: Echo
+_echo() {
+  echo "$@" |_stdout
+  return 0
+}
+# Function: Abort
 _abort() {
   local exitcode=1 &>/dev/null
-  [[ ${1} =~ ^[0-9]+$ ]] && {
-    exitcode="$1"; shift;
+  [[ ${1:-} =~ ^[0-9]+$ ]] && {
+    exitcode="${1}"; shift;
   } &>/dev/null
   echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
   [ ${exitcode:-1} -le 0 ] || exit ${exitcode:-1}
   return 0
 }
-
-# Cleanup
+# Function: Cleanup
 _cleanup() {
-  [ -n "${DOT_SSHCNF_TMP}" ] && {
-    rm -rf "${DOT_SSHCNF_TMP}" &>/dev/null
+  [ -n "${DOTSSHCNFTMP}" ] && {
+    rm -rf "${DOTSSHCNFTMP}" &>/dev/null
   } || :
   return 0
 }
-
 # Check
 [ -x "${dot_sshcnf_ssh}" ] ||
 _abort 1 "ssh '${dot_sshcnf_ssh:-?}': Command not found."
 [ -x "${dot_sshcnf_git}" ] ||
 _abort 1 "git '${dot_sshcnf_git:-?}': Command not found."
-
 # Parsing command line options
 while [ $# -gt 0 ]
 do
@@ -124,121 +115,99 @@ do
   -n*|-dry-run*|--dry-run*)
     _x_dryrun_mode=1
     ;;
-  -*)
-    _abort 22 "Illegal option '${1:-}'."
-    ;;
   *)
+    _abort 22 "Invalid argument, arg='${1:-}'."
     ;;
   esac
   shift
 done
-
-# Redirect to filter
-exec 1>| >(set +x; _stdout "${DOT_SSHCNF_PRJ}/${THIS}" 2>/dev/null)
-
 # Enable trace, verbose
-[ ${_xtrace_enable} -eq 0 ] || {
-  PS4='>(${THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
-  export PS4
-  set -xv
-}
-
+[ ${_xtrace_enable:-0} -eq 0 ] || {
+  PS4='>(${NAME}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
+  export PS4; set -xv; }
 # Dry run
-[ ${_x_dryrun_mode} -eq 0 ] || {
-  DOT_SSH_XDGCNF="${DOT_SSHCNF_TMP}${DOT_SSH_XDGCNF}"
-  DOT_SSHCNF_XDG="${DOT_SSHCNF_TMP}${DOT_SSHCNF_XDG}"
-  DOT_SSHCNF_DIR="${DOT_SSHCNF_TMP}${DOT_SSHCNF_DIR}"
+[ ${_x_dryrun_mode:-0} -eq 0 ] || {
+  DOTSSHXDGCNF="${DOTSSHCNFTMP}${DOTSSHXDGCNF}"
+  DOTSSHCNFXDG="${DOTSSHCNFTMP}${DOTSSHCNFXDG}"
+  DOTSSHCNFDIR="${DOTSSHCNFTMP}${DOTSSHCNFDIR}"
 }
-
 # Temp dir.
-[ -d "${DOT_SSHCNF_TMP}" ] || {
-  mkdir -p "${DOT_SSHCNF_TMP}" &&
-  chmod 0700 "${DOT_SSHCNF_TMP}" || :
+[ -d "${DOTSSHCNFTMP}" ] || {
+  mkdir -p "${DOTSSHCNFTMP}" &&
+  chmod 0700 "${DOTSSHCNFTMP}" || :
 } &>/dev/null
-
 # Set trap
-trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
-trap "_cleanup" EXIT
-
+: "Trap" && {
+  trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
+  trap "_cleanup" EXIT
+}
 # ssh version
-echo "SSH-Version: $(${dot_sshcnf_ssh} -V 2>&1)"
-
+_echo "SSH-Version: $(${dot_sshcnf_ssh} -V 2>&1)"
 # Include ?
 _inc_directive=$(
   : && {
     "${dot_sshcnf_ssh}" -oInclude=/dev/null localhost 2>&1 |
     egrep -i 'Bad[ \t]+configuration[ \t]+option:[ \t]+include'
   } &>/dev/null && echo "0" || echo "1"; )
-
 # Include support ?
 if [ ${_inc_directive} -eq 0 ]
 then
-  echo "Your ssh does not support include directive." 1>&2
+  _echo "Your ssh does not support include directive." 1>&2
 fi
-
 # Checking install base
-[ -d "${DOT_SSH_XDGCNF}" ] || {
-  mkdir -p "${DOT_SSH_XDGCNF}" &&
-  chmod 0755 "${DOT_SSH_XDGCNF}"
+[ -d "${DOTSSHXDGCNF}" ] || {
+  mkdir -p "${DOTSSHXDGCNF}" &&
+  chmod 0755 "${DOTSSHXDGCNF}"
 } 2>/dev/null
-
 # Install or update
-if [ ! -d "${DOT_SSHCNF_XDG}/.git" ]
+if [ ! -d "${DOTSSHCNFXDG}/.git" ]
 then
-
-  echo "Git clone from '${DOT_SSHCNF_URL}'."
-
+  _echo "Git clone from '${GIT_PROJ_URL}'."
   # Install
-  ( [ -d "${DOT_SSHCNF_XDG}" ] && {
-      mv -f "${DOT_SSHCNF_XDG}" \
-            "${DOT_SSHCNF_XDG}.$(date +'%Y%m%dT%H%M%S')"
+  ( [ -d "${DOTSSHCNFXDG}" ] && {
+      mv -f "${DOTSSHCNFXDG}" \
+            "${DOTSSHCNFXDG}.$(date +'%Y%m%dT%H%M%S')"
     } || :
-    cd "${DOT_SSH_XDGCNF}" && {
-      ${dot_sshcnf_git} clone "${DOT_SSHCNF_URL}"
+    cd "${DOTSSHXDGCNF}" && {
+      ${dot_sshcnf_git} clone "${GIT_PROJ_URL}"
     }; )
-
 else
-
-  echo "Git pull from '${DOT_SSHCNF_URL}'."
-
+  _echo "Git pull from '${GIT_PROJ_URL}'."
   # Update
-  ( cd "${DOT_SSHCNF_XDG}" && {
+  ( cd "${DOTSSHCNFXDG}" && {
       ${dot_sshcnf_git} stash save "$(date +%'Y%m%dT%H%M%S')";
       ${dot_sshcnf_git} pull;
     }; )
-
 fi &&
-[ -d "${DOT_SSHCNF_XDG}" ] && {
-  ( cd "${DOT_SSHCNF_XDG}" &&
+[ -d "${DOTSSHCNFXDG}" ] && {
+  ( cd "${DOTSSHCNFXDG}" &&
     ${dot_sshcnf_git} config --get core.filemode |
     egrep -i '^false$' &>/dev/null || {
       ${dot_sshcnf_git} config core.filemode false &&
-      echo "Git config: repo=${DOT_SSHCNF_PRJ} core.filemode=off."
+      _echo "Git config: repo=${GIT_PROJNAME} core.filemode=off."
     }; )
 } || exit $?
-
 # $HOME/.ssh
-[ -d "${DOT_SSHCNF_DIR}" ] || {
-  ( mkdir -p "${DOT_SSHCNF_DIR}" &&
-    cd "${DOT_SSHCNF_DIR}" &&
+[ -d "${DOTSSHCNFDIR}" ] || {
+  ( mkdir -p "${DOTSSHCNFDIR}" &&
+    cd "${DOTSSHCNFDIR}" &&
     chmod 0700 .; )
 } 2>/dev/null
-
 # Setup
-( cd "${DOT_SSHCNF_DIR}" && {
+( cd "${DOTSSHCNFDIR}" && {
 
-  echo "OS-Type: [${DOT_SSHCONF_OS}]"
-  echo "Pwd: [$(pwd)]"
+  _echo "OS-Type: [${DOTSSHCNF_OS}]"
+  _echo "Pwd: [$(pwd)]"
 
   for sshentry in $(
-    cd "${DOT_SSHCNF_XDG}/ssh" && {
+    cd "${DOTSSHCNFXDG}/ssh" && {
       find . ! -name "default.conf.*" |
       sort
     } 2>/dev/null; )
   do
 
     ent_name="${sshentry#*./}"
-    fullpath="${DOT_SSHCNF_XDG}/ssh/${ent_name}"
+    fullpath="${DOTSSHCNFXDG}/ssh/${ent_name}"
     destname="${ent_name}"
     filemode="0600"
     use_link=1
@@ -256,7 +225,7 @@ fi &&
       [ -d "./${ent_name}" ] || {
         mkdir -p "./${ent_name}" &&
         chmod 0700 "./${ent_name}" &&
-        echo "Mkdir '${DOT_SSHCNF_DIR}/${ent_name}'."
+        _echo "Mkdir '${DOTSSHCNFDIR}/${ent_name}'."
       } 2>/dev/null || :
 
       continue
@@ -268,9 +237,9 @@ fi &&
       destname="${ent_name}.tmpl"
       ;;
     default.conf::*)
-      [ -s "${fullpath}.${DOT_SSHCONF_OS}" ] && {
-        ent_name="${ent_name}.${DOT_SSHCONF_OS}"
-        fullpath="${DOT_SSHCNF_XDG}/ssh/${ent_name}"
+      [ -s "${fullpath}.${DOTSSHCNF_OS}" ] && {
+        ent_name="${ent_name}.${DOTSSHCNF_OS}"
+        fullpath="${DOTSSHCNFXDG}/ssh/${ent_name}"
       } || :
       ;;
     config.d/*.*::*)
@@ -296,7 +265,7 @@ fi &&
        [ "${fullpath}" != "$(readlink "./${destname}" 2>/dev/null || :;)" ]
     then
 
-      printf "${THIS}: Symlink '%s' to '%s' ... " "${fullpath}" "${destname}" && {
+      printf "${NAME}: Symlink '%s' to '%s' ... " "${fullpath}" "${destname}" && {
         ln -sf "${fullpath}" "./${destname}" &&
         chmod "${filemode}" "./${destname}"
       } &>/dev/null &&
@@ -306,20 +275,19 @@ fi &&
          ! diff "${fullpath}" "./${destname}" &>/dev/null
     then
 
-      printf "${THIS}: Copy '%s' to '%s' ... " "${fullpath}" "${destname}" && {
+      printf "${NAME}: Copy '%s' to '%s' ... " "${fullpath}" "${destname}" && {
         cp -pf "${fullpath}" "./${destname}" &&
         chmod "${filemode}" "./${destname}"
       } &>/dev/null &&
       echo "OK." || echo "NG."
 
     else
-      printf "${THIS}: NOOP '%s'('%s')." "${fullpath}" "${destname}"
-      echo
+      _echo "NOOP '%s'('%s')." "${fullpath}" "${destname}"
     fi
 
   done
 
-  if [ ${_inc_directive} -eq 0 ]
+  if [ ${_inc_directive:-0} -eq 0 ]
   then
     [ -x "./ssh_config_cat.sh" -a -r "./config.tmpl" ] && {
       ./ssh_config_cat.sh -fconfig.tmpl
@@ -327,9 +295,7 @@ fi &&
   fi
 
 }; )
-
 # Finish installation
-echo "Done."
-
+_echo "Done."
 # End
 exit 0

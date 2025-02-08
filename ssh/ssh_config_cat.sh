@@ -1,25 +1,25 @@
 #!/bin/bash
-THIS="${BASH_SOURCE##*/}"
-NAME="${THIS%.*}"
-CDIR=$([ -n "${BASH_SOURCE%/*}" ] && cd "${BASH_SOURCE%/*}" &>/dev/null; pwd)
-
+[ "$0" = "$BASH_SOURCE" ] &>/dev/null || {
+echo "Run it directly" 1>&2; exit 1; }
+THIS="${BASH_SOURCE}"
+NAME="${THIS##*/}"
+CDIR=$([ -n "${THIS%/*}" ] && cd "${THIS%/*}" &>/dev/null; pwd)
+# Name
+NAME="${NAME:-ssh_config_cat.sh}"
+BASE="${NAME%.*}"
 # Prohibits overwriting by redirect and use of undefined variables.
 set -Cu
-
 # Vars
 subcommand=""
 ssh_config=""
 ssh_cnfdir="${HOME}/.ssh"
-
 # Output (for update)
 sahcat_out=""
 sshcatdiff=""
-
 # Temp dir.
 sc_tmp_dir="${TMPDIR:-/tmp}/.${NAME}.$$"
 sc_tmp_cfg=""
 sc_tmpdiff=""
-
 # Flags
 enable_inc=0
 rm_comment=0
@@ -27,10 +27,8 @@ ignore_inc=0
 _force_upd=0
 _dryrun_on=0
 _xtrace_on=0
-
 # Ssh
 sshcat_ssh="$(type -P ssh)"
-
 # Debug
 case "${DEBUG:-NO}" in
 0|[Nn][Oo]|[Oo][Ff][Ff])
@@ -40,34 +38,34 @@ case "${DEBUG:-NO}" in
   _xtrace_on=1
   ;;
 esac || :
-
-# Stdout
+# Function: Stdout
 _stdout() {
-  local row_data=""
-  cat | while IFS= read row_data
-  do printf "$THIS: %s" "${row_data}"; echo; done
+  local ltag="${1:-$NAME}"
+  local line=""
+  cat - | while IFS= read line
+  do
+    [[ "${line}" =~ ^${ltag}: ]] ||
+    printf "${ltag}: "; echo "${line}"
+  done
   return 0
 }
-
-# Abort
+# Function: Abort
 _abort() {
   local exitcode=1 &>/dev/null
-  [[ "${1:-}" =~ ^[0-9]+$ ]] && {
+  [[ ${1:-} =~ ^[0-9]+$ ]] && {
     exitcode="${1}"; shift;
   } &>/dev/null
   echo "ERROR: $@" "(${exitcode:-1})" |_stdout 1>&2
   [ ${exitcode:-1} -le 0 ] || exit ${exitcode:-1}
   return 0
 }
-
-# Cleanup
+# Function: Cleanup
 _cleanup() {
-  [ -n "${sc_tmp_dir}" ] && {
+  [ -n "${sc_tmp_dir:-}" ] && {
     rm -rf "${sc_tmp_dir}"
   } &>/dev/null || :
   return 0
 }
-
 # Subcommand (First option)
 case "${1:-}" in
 cat|check|update)
@@ -80,7 +78,6 @@ up)
   subcommand="cat"
   ;;
 esac
-
 # Options
 while [ $# -gt 0 ]
 do
@@ -114,9 +111,9 @@ do
     ;;
   *::-h|*::-help*|*::--help*)
     cat <<_USAGE_
-Usage: $THIS [cat]  [-f /path/to/ssh_config] (--remove-comment] [--ignore-include]
-       $THIS update [-f /path/to/ssh_config] [-o /path/to/ssh_config.out] [--force]
-       $THIS check  [-f /path/to/ssh_config]
+Usage: ${NAME} [cat]  [-f /path/to/ssh_config] (--remove-comment] [--ignore-include]
+       ${NAME} update [-f /path/to/ssh_config] [-o /path/to/ssh_config.out] [--force]
+       ${NAME} check  [-f /path/to/ssh_config]
 
 _USAGE_
     exit 1
@@ -130,32 +127,27 @@ _USAGE_
   esac
   shift
 done
-
 # Check
 [ -x "${sshcat_ssh}" ] || {
   _abort 127 "ssh '${sshcat_ssh}': Command not found."
 }
-
 # Include ?
 enable_inc=$(
   : && {
     "${sshcat_ssh}" -oInclude=/dev/null localhost 2>&1 |
     egrep -i 'Bad[[:space:]]+configuration[[:space:]]+option:[[:space:]]+include'
   } &>/dev/null && echo "0" || echo "1"; )
-
 # Include support ?
-if [ ${enable_inc} -eq 0 ]
+if [ ${enable_inc:-0} -eq 0 ]
 then
   _abort 0 "Your ssh does not support include directive."
 fi
-
 # Enable trace, verbose
-[ ${_xtrace_on} -eq 0 ] || {
-  PS4='>(${THIS:-$THIS}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
+[ ${_xtrace_on:-0} -eq 0 ] || {
+  PS4='>(${THIS:-${NAME}}:${LINENO:-0})${FUNCNAME:+:$FUNCNAME()}: '
   export PS4
   set -xv
 }
-
 # SSH CONFIG (IN)
 [ -n "${ssh_config}" ] || {
   if [ -r "${ssh_cnfdir}/config.tmpl" ]
@@ -168,9 +160,8 @@ then
   # SSH Config Dir
   ssh_cnfdir="${ssh_config%/*}"
 else
-  _abort 2 "'${ssh_config}': no such file or directory."
+  _abort 2 "no such file or directory, file='${ssh_config}'."
 fi
-
 # Subcommand check
 case "${subcommand}" in
 check)
@@ -209,7 +200,6 @@ update)
 *)
   ;;
 esac
-
 # Temp dir and file.
 [ -d "${sc_tmp_dir}" ] || {
 
@@ -223,12 +213,12 @@ esac
   else : "noop"
   fi
 
-} 1>/dev/null
-
+} &>/dev/null
 # Set trap
-trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
-trap "_cleanup" EXIT
-
+: "Trap" && {
+  trap "_cleanup" SIGTERM SIGHUP SIGINT SIGQUIT
+  trap "_cleanup" EXIT
+}
 # Print
 if [ "${subcommand}" = "cat" -o ${enable_inc} -eq 0 -o ${_force_upd} -ne 0 ]
 then
@@ -310,7 +300,6 @@ check)
     { echo "Syntax NG."; false; }
 
   } ;;
-
 update)
   : "Update" && {
 
@@ -347,10 +336,8 @@ update)
     fi
 
   } ;;
-
 *)
   : "noop" ;;
 esac
-
 # End
 exit $?
