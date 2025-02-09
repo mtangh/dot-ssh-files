@@ -18,7 +18,7 @@ ssh_cnfdir="${HOME}/.ssh"
 sshcat_out=""
 sshcatdiff=""
 # Temp dir.
-sc_tmp_dir="$(cd ${TMPDIR:-/tmp};pwd)/${NAME}.$$"
+sc_tmp_dir="$(cd ${TMPDIR:-/tmp} || :;pwd)/${NAME}.$$"
 sc_tmp_cfg=""
 sc_tmpdiff=""
 # Flags
@@ -291,8 +291,6 @@ case "${subcommand}" in
 check)
   : "Check" && {
 
-    exec 1>| >(_stdout)
-
     sshcatopts="-Gv"
     sshcatopts="${sshcatopts} -F $(
       if [ -s "${sc_tmp_cfg}" ]
@@ -301,15 +299,13 @@ check)
       fi 2>/dev/null; )"
 
     # Check
-    "${sshcat_ssh}" ${sshcatopts} localhost &&
-    { echo "Syntax OK."; } ||
-    { echo "Syntax NG."; false; }
+    { "${sshcat_ssh}" ${sshcatopts} localhost 2>&1 |_stdout; } &&
+    { _echo "Syntax OK."; } ||
+    { _echo "Syntax NG."; false; }
 
   } ;;
 update)
   : "Update" && {
-
-    exec 1>| >(_stdout)
 
     if [ -s "${sc_tmp_cfg}" ]
     then
@@ -333,13 +329,13 @@ update)
         cat "${sc_tmp_cfg}" 1>|"${sshcat_out}" && {
           [ -s "${sc_tmpdiff}" ] &&
           cat "${sc_tmpdiff}" 1>|"${sshcatdiff}" || :
-        } && echo "Update succeeded."
+        } && _echo "Update succeeded."
 
       else
-        echo "No difference, No update."; false
+        _echo "No difference, No update."; false
       fi 2>/dev/null
 
-    fi
+    fi # if [ -s "${sc_tmp_cfg}" ]
 
   } ;;
 *)
