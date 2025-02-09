@@ -37,7 +37,7 @@ DRY_RUN_ON=0
 _inc_directive=0
 # Function: Stdout
 _stdout() {
-  local ltag="${1:-$NAME}"
+  local ltag="${1:-$GIT_PROJNAME/$NAME}"
   local line=""
   cat - | while IFS= read -r line
   do
