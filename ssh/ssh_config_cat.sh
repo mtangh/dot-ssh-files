@@ -18,7 +18,7 @@ ssh_cnfdir="${HOME}/.ssh"
 sshcat_out=""
 sshcatdiff=""
 # Temp dir.
-sc_tmp_dir="${TMPDIR:-/tmp}/.${NAME}.$$"
+sc_tmp_dir="$(cd ${TMPDIR:-/tmp};pwd)/${NAME}.$$"
 sc_tmp_cfg=""
 sc_tmpdiff=""
 # Flags
