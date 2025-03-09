@@ -14,13 +14,19 @@ set -o pipefail
 ssh_cnfdir="${HOME}/.ssh"
 # Control Path
 sshctrldir="$(eval echo "$(
-  grep -h "ControlPath " "${ssh_cnfdir}"/* 2>/dev/null |
+  : && {
+    cat "${ssh_cnfdir}"/config "${ssh_cnfdir}"/default.conf
+    cat "${ssh_cnfdir}"/config.d/*
+  } 2>/dev/null |
+  grep -h "ControlPath " 2>/dev/null |
   grep -Ev '^[[:space:]]*#' |awk '{print($2);}' |
   grep -E '/[^/]+/' |head -n1)")"
 sshctrldir="${sshctrldir%/*}"
 # Mkdir
 [ -z "${sshctrldir:-}" ] ||
-[ ! -d "${sshctrldir:-X}" ] ||
-mkdir -p "${sshctrldir:-}"
+[ -d "${sshctrldir:-X}" ] || {
+  echo "Mkdir: ${sshctrldir:-}" &&
+  mkdir -p "${sshctrldir:-}"
+}
 # End
 exit $?
