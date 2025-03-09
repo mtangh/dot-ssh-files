@@ -305,6 +305,11 @@ fi &&
 
   done
 
+  if [ -x "./ssh_mkdirs.sh" ]
+  then
+    ./ssh_mkdirs.sh
+  fi
+
   if [ ${_inc_directive:-0} -eq 0 ]
   then
     [ -x "./ssh_config_cat.sh" -a -r "./config.tmpl" ] && {
