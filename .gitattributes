@@ -152,6 +152,8 @@
 *.erb           text
 *.lua           text
 *.js            text
+*.cjs           text
+*.mjs           text
 *.json          text
 *.scpt          text
 *.sql           text
@@ -172,7 +174,12 @@
 *.yaml          text
 *.tml           text
 *.toml          text
+
+# Markdown
 *.md            text
+
+# Property List
+*.plist         binary
 
 # Tex
 *.tex           text diff=tex

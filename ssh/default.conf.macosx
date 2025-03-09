@@ -60,7 +60,7 @@ Host *
     # Specify the path to the control socket used for connection sharing
     # as described in the ControlMaster section above or the string none
     # to disable connection sharing.
-    ControlPath ~/.ssh/mux-%r@%h:%p
+    ControlPath ~/.ssh/.sockets/mux-%r@%h:%p
 
     # ControlPersist:
     # When used in conjunction with ControlMaster, specifies that the

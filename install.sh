@@ -305,10 +305,10 @@ fi &&
 
   done
 
-  if [ -x "./ssh_mkdirs.sh" ]
+  if [ -x "./ssh_mksubdirs.sh" ]
   then
-    ./ssh_mkdirs.sh
-  fi
+    ./ssh_mksubdirs.sh
+  fi &>/dev/null
 
   if [ ${_inc_directive:-0} -eq 0 ]
   then

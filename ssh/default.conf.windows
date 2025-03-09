@@ -48,22 +48,3 @@ Host *
 	# Specifies whether to use compression.
 	Compression yes
 
-# Added by Krypton
-	# PKCS11Provider:
-	# Specifies which PKCS#11 provider to use. The argument to this
-	# keyword is the PKCS#11 shared library ssh(1) should use to
-	# communicate with a PKCS#11 token providing the user's private RSA
-	# key.
-	#PKCS11Provider /usr/local/lib/kr-pkcs11.so
-	# ProxyCommand:
-	# Specifies the command to use to connect to the server.
-	#ProxyCommand /usr/local/bin/krssh %h %p
-	# IdentityFile:
-	# Specifies a file from which the user's DSA, ECDSA, Ed25519 or RSA
-	# authentication identity is read.
-	#IdentityFile ~/.ssh/id_krypton
-	#IdentityFile ~/.ssh/id_ed25519
-	#IdentityFile ~/.ssh/id_rsa
-	#IdentityFile ~/.ssh/id_ecdsa
-	#IdentityFile ~/.ssh/id_dsa
-
