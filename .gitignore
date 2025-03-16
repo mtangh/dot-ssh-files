@@ -502,3 +502,16 @@ typings/
 ## Node: Serverless directories
 .serverless
 
+
+#
+# .gitignore.d
+#
+
+# ssh/config.d
+ssh/config.d/*
+!ssh/config.d/.gitkeep
+!ssh/config.d/0*.conf
+# ssh/keys
+ssh/keys/*
+!ssh/keys/.gitkeep
+
